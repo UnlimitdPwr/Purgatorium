@@ -23,5 +23,8 @@ public class PlayerController1 : MonoBehaviour
             x = 1f;
 
         movement.SetMoveInput(x);
+
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+            movement.Jump();
     }
 }

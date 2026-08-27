@@ -3,6 +3,7 @@ using UnityEngine;
 public class MovementScript : MonoBehaviour
 {
     public float moveSpeed = 5f;
+    public float jumpForce = 10f;
 
     private Rigidbody2D rb;
     private float moveInput;
@@ -23,6 +24,15 @@ public class MovementScript : MonoBehaviour
     {
         
     }
+
+    public void Jump()
+    {
+        rb.linearVelocity = new Vector2(
+            rb.linearVelocity.x,
+            jumpForce
+        );
+    }
+
     void FixedUpdate()
     {
         rb.linearVelocity = new Vector2(

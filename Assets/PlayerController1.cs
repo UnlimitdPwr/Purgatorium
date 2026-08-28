@@ -14,6 +14,16 @@ public class PlayerController1 : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        HandleMovementInput();
+        HandleJumpInput();
+    }
+
+    // =========================
+    // MOVEMENT INPUT
+    // =========================
+
+    void HandleMovementInput()
+    {
         float x = 0f;
 
         if (Keyboard.current.aKey.isPressed)
@@ -23,8 +33,17 @@ public class PlayerController1 : MonoBehaviour
             x = 1f;
 
         movement.SetMoveInput(x);
+    }
 
+
+    // =========================
+    // JUMP INPUT
+    // =========================
+
+    void HandleJumpInput()
+    {
         if (Keyboard.current.spaceKey.wasPressedThisFrame)
             movement.Jump();
     }
 }
+    

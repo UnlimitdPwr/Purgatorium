@@ -5,6 +5,20 @@ public class MovementScript : MonoBehaviour
     public float moveSpeed = 5f;
     public float jumpForce = 10f;
 
+
+    // =========================
+    // GROUND CHECK
+    // =========================
+
+    public Transform groundCheck;
+    public float groundCheckRadius = 0.1f;
+    public LayerMask groundLayer;
+
+
+    // =========================
+    // PRIVATE VARIABLES
+    // =========================
+
     private Rigidbody2D rb;
     private float moveInput;
 
@@ -27,6 +41,9 @@ public class MovementScript : MonoBehaviour
 
     public void Jump()
     {
+        if (!IsGrounded())
+            return;
+
         rb.linearVelocity = new Vector2(
             rb.linearVelocity.x,
             jumpForce
@@ -38,6 +55,48 @@ public class MovementScript : MonoBehaviour
         rb.linearVelocity = new Vector2(
             moveInput * moveSpeed,
             rb.linearVelocity.y
+        );
+    }
+
+    // =========================
+    // GROUND CHECK
+    // =========================
+
+    public bool IsGrounded()
+    {
+        return Physics2D.OverlapCircle(
+            groundCheck.position,
+            groundCheckRadius,
+            groundLayer
+        );
+    }
+
+    // =========================
+    // GETTERS
+    // =========================
+
+    public float GetMoveInput()
+    {
+        return moveInput;
+    }
+
+    public float GetVerticalVelocity()
+    {
+        return rb.linearVelocity.y;
+    }
+
+    // =========================
+    // GROUND CHECK VISIBLITY
+    // =========================
+
+    void OnDrawGizmosSelected()
+    {
+        if (groundCheck == null)
+            return;
+
+        Gizmos.DrawWireSphere(
+            groundCheck.position,
+            groundCheckRadius
         );
     }
 }

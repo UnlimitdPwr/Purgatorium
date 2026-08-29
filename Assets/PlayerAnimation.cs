@@ -61,4 +61,13 @@ public class PlayerAnimation : MonoBehaviour
         if (moveInput < 0)
             spriteRenderer.flipX = true;
     }
+
+    // =========================
+    // PARRY ANIMATION
+    // =========================
+
+    public void PlayParryAnimation()
+    {
+        animator.SetTrigger("Parry");
+    }
 }

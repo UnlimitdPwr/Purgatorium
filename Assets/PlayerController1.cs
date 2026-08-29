@@ -4,11 +4,13 @@ using UnityEngine.InputSystem;
 public class PlayerController1 : MonoBehaviour
 {
     private MovementScript movement;
+    private ParryScript parry;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         movement = GetComponent<MovementScript>();
+        parry = GetComponent<ParryScript>();
     }
 
     // Update is called once per frame
@@ -16,6 +18,7 @@ public class PlayerController1 : MonoBehaviour
     {
         HandleMovementInput();
         HandleJumpInput();
+        HandleParryInput();
     }
 
     // =========================
@@ -44,6 +47,16 @@ public class PlayerController1 : MonoBehaviour
     {
         if (Keyboard.current.spaceKey.wasPressedThisFrame)
             movement.Jump();
+    }
+
+    // =========================
+    // PARRY INPUT
+    // =========================
+
+    void HandleParryInput()
+    {
+        if (Keyboard.current.leftShiftKey.wasPressedThisFrame)
+            parry.TryParry();
     }
 }
     

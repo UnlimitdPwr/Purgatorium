@@ -4,12 +4,16 @@ public class EnemyController : MonoBehaviour
 {
     public Transform player;
     public float detectionRange = 5f;
+    public float attackRange = 1.2f;
+    public float attackCooldown = 1f;
 
     private EnemyMovement movement;
+    private EnemyAttack attack;
 
     void Awake()
     {
         movement = GetComponent<EnemyMovement>();
+        attack = GetComponent<EnemyAttack>();
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -23,13 +27,18 @@ public class EnemyController : MonoBehaviour
     {
         float distanceToPlayer = Vector2.Distance(transform.position, player.position);
 
-        if (distanceToPlayer <= detectionRange)
+
+        if (distanceToPlayer > detectionRange)
         {
-            ChasePlayer();
+            movement.Stop();
+        }
+        else if (distanceToPlayer <= attackRange)
+        {
+           AttackPlayer();
         }
         else
         {
-            movement.Stop();
+            ChasePlayer();
         }
     }
 
@@ -38,5 +47,12 @@ public class EnemyController : MonoBehaviour
         float direction = Mathf.Sign(player.position.x - transform.position.x);
 
         movement.Move(direction);
+    }
+
+    void AttackPlayer()
+    {
+        movement.Stop();
+
+        attack.Attack();
     }
 }

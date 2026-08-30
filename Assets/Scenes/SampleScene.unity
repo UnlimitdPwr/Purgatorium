@@ -133,8 +133,9 @@ GameObject:
   - component: {fileID: 258355692}
   - component: {fileID: 258355694}
   - component: {fileID: 258355693}
-  - component: {fileID: 258355696}
   - component: {fileID: 258355697}
+  - component: {fileID: 258355698}
+  - component: {fileID: 258355696}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -295,6 +296,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   player: {fileID: 2003877418}
   detectionRange: 5
+  attackRange: 1.5
+  attackCooldown: 1
 --- !u!114 &258355694
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -342,6 +345,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86a572ac88ec6df45b6c6426b58747fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+--- !u!114 &258355698
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 258355688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0554564921bebcb4c847c2e359e13e0c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  damage: 10
 --- !u!1 &364306069
 GameObject:
   m_ObjectHideFlags: 0
@@ -678,8 +694,8 @@ GameObject:
   - component: {fileID: 2003877415}
   - component: {fileID: 2003877420}
   - component: {fileID: 2003877419}
-  - component: {fileID: 2003877422}
   - component: {fileID: 2003877423}
+  - component: {fileID: 2003877422}
   - component: {fileID: 2003877421}
   m_Layer: 0
   m_Name: Player

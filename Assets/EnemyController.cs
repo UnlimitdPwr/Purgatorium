@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class EnemyController : MonoBehaviour
 {
@@ -19,12 +20,17 @@ public class EnemyController : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+
     }
 
-    // Update is called once per frame
-    void Update()
+// Update is called once per frame
+void Update()
     {
+        if (Keyboard.current.jKey.wasPressedThisFrame)
+        {
+            movement.Jump();
+        }
+
         float distanceToPlayer = Vector2.Distance(transform.position, player.position);
 
 
@@ -40,7 +46,8 @@ public class EnemyController : MonoBehaviour
         {
             ChasePlayer();
         }
-    }
+
+}
 
     void ChasePlayer()
     {

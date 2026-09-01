@@ -8,10 +8,19 @@ public class EnemyAttack : MonoBehaviour
 
     private float attackTimer;
 
+    private EnemyAnimation animation;
+    private EnemyHitbox hitbox;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         
+    }
+
+    void Awake()
+    {
+        animation = GetComponent<EnemyAnimation>();
+        hitbox = GetComponentInChildren<EnemyHitbox>();
     }
 
     // Update is called once per frame
@@ -30,6 +39,18 @@ public class EnemyAttack : MonoBehaviour
 
         Debug.Log("Enemy attacks for " + damage + " damage!");
 
+        animation.PlayAttack();
+
         attackTimer = attackCooldown;
+    }
+
+    public void EnableHitbox()
+    {
+        hitbox.EnableHitbox();
+    }
+
+    public void DisableHitbox()
+    {
+        hitbox.DisableHitbox();
     }
 }

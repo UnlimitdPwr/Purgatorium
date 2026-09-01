@@ -46,4 +46,9 @@ public class EnemyAnimation : MonoBehaviour
                 spriteRenderer.flipX = true;
             }
         }
+
+    public void PlayAttack()
+    {
+        animator.SetTrigger("Attack");
+    }
 }

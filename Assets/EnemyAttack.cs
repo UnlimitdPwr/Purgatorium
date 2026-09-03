@@ -46,7 +46,7 @@ public class EnemyAttack : MonoBehaviour
 
     public void EnableHitbox()
     {
-        hitbox.EnableHitbox();
+        hitbox.EnableHitbox(damage);
     }
 
     public void DisableHitbox()

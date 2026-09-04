@@ -136,6 +136,8 @@ GameObject:
   - component: {fileID: 258355697}
   - component: {fileID: 258355698}
   - component: {fileID: 258355696}
+  - component: {fileID: 258355700}
+  - component: {fileID: 258355699}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -296,10 +298,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6774e650a298b294abdff8bad4468eea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  player: {fileID: 2003877418}
-  detectionRange: 5
   attackRange: 1.5
-  attackCooldown: 1
 --- !u!114 &258355694
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -367,6 +366,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   damage: 10
   attackCooldown: 1
+--- !u!114 &258355699
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 258355688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d8a43936daf5de4bb48bc21e42def3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+--- !u!114 &258355700
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 258355688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b51c8b69ad3270449f4632f75a04f73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  detectionRange: 5
 --- !u!1 &303296558
 GameObject:
   m_ObjectHideFlags: 0
@@ -1123,6 +1147,9 @@ MonoBehaviour:
   playerHealth: {fileID: 2003877424}
   healthFill: {fileID: 969162274}
   damageFill: {fileID: 1251946027}
+  healthDuration: 0.4
+  damageDelay: 0.2
+  damageDuration: 0.7
 --- !u!114 &1910917894
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1357,9 +1384,10 @@ GameObject:
   - component: {fileID: 2003877422}
   - component: {fileID: 2003877421}
   - component: {fileID: 2003877424}
-  m_Layer: 0
+  - component: {fileID: 2003877425}
+  m_Layer: 9
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1594,6 +1622,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   maxHealth: 100
+--- !u!114 &2003877425
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2003877414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5b78301cf97b574c8d7e1a2aacfea26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

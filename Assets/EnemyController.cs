@@ -3,60 +3,100 @@ using UnityEngine.InputSystem;
 
 public class EnemyController : MonoBehaviour
 {
-    public Transform player;
-    public float detectionRange = 5f;
     public float attackRange = 1.2f;
-    public float attackCooldown = 1f;
 
     private EnemyMovement movement;
+    private EnemyDetection detection;
+    private EnemyTargeting targeting;
     private EnemyAttack attack;
 
     void Awake()
     {
         movement = GetComponent<EnemyMovement>();
+        detection = GetComponent<EnemyDetection>();
+        targeting = GetComponent<EnemyTargeting>();
         attack = GetComponent<EnemyAttack>();
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    void Update()
     {
+        // =========================
+        // TEST JUMP
+        // =========================
 
-    }
-
-// Update is called once per frame
-void Update()
-    {
-        if (Keyboard.current.jKey.wasPressedThisFrame)
+        if (Keyboard.current != null &&
+            Keyboard.current.jKey.wasPressedThisFrame)
         {
             movement.Jump();
         }
 
-        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
+        // =========================
+        // DETECTION
+        // =========================
 
+        Transform detectedPlayer = detection.GetDetectedPlayer();
 
-        if (distanceToPlayer > detectionRange)
+        if (detectedPlayer != null)
         {
-            movement.Stop();
-        }
-        else if (distanceToPlayer <= attackRange)
-        {
-           AttackPlayer();
+            targeting.SetTarget(detectedPlayer);
         }
         else
         {
-            ChasePlayer();
+            targeting.ClearTarget();
         }
 
-}
+        // =========================
+        // NO TARGET
+        // =========================
 
-    void ChasePlayer()
+        if (!targeting.HasTarget())
+        {
+            movement.Stop();
+            return;
+        }
+
+        // =========================
+        // TARGET DISTANCE
+        // =========================
+
+        float distanceToTarget = targeting.GetDistanceToTarget();
+
+        // =========================
+        // ATTACK
+        // =========================
+
+        if (distanceToTarget <= attackRange)
+        {
+            AttackTarget();
+        }
+        else
+        {
+            ChaseTarget();
+        }
+    }
+
+    // =========================
+    // CHASE
+    // =========================
+
+    void ChaseTarget()
     {
-        float direction = Mathf.Sign(player.position.x - transform.position.x);
+        float direction = targeting.GetHorizontalDirectionToTarget();
+
+        if (direction == 0f)
+        {
+            movement.Stop();
+            return;
+        }
 
         movement.Move(direction);
     }
 
-    void AttackPlayer()
+    // =========================
+    // ATTACK
+    // =========================
+
+    void AttackTarget()
     {
         movement.Stop();
 

@@ -27,7 +27,10 @@ public class EnemyMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        rb.linearVelocity = new Vector2(moveDirection * moveSpeed, rb.linearVelocity.y);
+        rb.linearVelocity = new Vector2(
+            moveDirection * moveSpeed,
+            rb.linearVelocity.y
+        );
     }
 
     // =========================
@@ -100,5 +103,4 @@ public class EnemyMovement : MonoBehaviour
             groundCheckRadius
         );
     }
-
 }

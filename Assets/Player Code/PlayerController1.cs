@@ -1,61 +1,51 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class PlayerController1 : MonoBehaviour
 {
+    private PlayerInput playerInput;
     private MovementScript movement;
     private ParryScript parry;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        playerInput = GetComponent<PlayerInput>();
         movement = GetComponent<MovementScript>();
         parry = GetComponent<ParryScript>();
     }
 
-    // Update is called once per frame
     void Update()
     {
-        HandleMovementInput();
-        HandleJumpInput();
-        HandleParryInput();
+        HandleMovement();
+        HandleJump();
+        HandleParry();
     }
 
     // =========================
-    // MOVEMENT INPUT
+    // MOVEMENT
     // =========================
 
-    void HandleMovementInput()
+    void HandleMovement()
     {
-        float x = 0f;
-
-        if (Keyboard.current.aKey.isPressed)
-            x = -1f;
-
-        if (Keyboard.current.dKey.isPressed)
-            x = 1f;
-
-        movement.SetMoveInput(x);
+        movement.SetMoveInput(playerInput.MoveInput);
     }
 
-
     // =========================
-    // JUMP INPUT
+    // JUMP
     // =========================
 
-    void HandleJumpInput()
+    void HandleJump()
     {
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        if (playerInput.JumpPressed)
             movement.Jump();
     }
 
     // =========================
-    // PARRY INPUT
+    // PARRY
     // =========================
 
-    void HandleParryInput()
+    void HandleParry()
     {
-        if (Keyboard.current.leftShiftKey.wasPressedThisFrame)
+        if (playerInput.ParryPressed)
             parry.TryParry();
     }
 }

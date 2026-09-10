@@ -7,6 +7,9 @@ public class CameraFollow1 : MonoBehaviour
 
     void LateUpdate()
     {
+        if (player == null)
+            return;
+
         Vector3 targetPosition = new Vector3(
             player.position.x,
             player.position.y,
@@ -18,17 +21,5 @@ public class CameraFollow1 : MonoBehaviour
             targetPosition,
             smoothSpeed * Time.deltaTime
         );
-    }
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }

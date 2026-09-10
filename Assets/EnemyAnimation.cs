@@ -13,39 +13,32 @@ public class EnemyAnimation : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
-        // Start is called once before the first execution of Update after the MonoBehaviour is created
-        void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
     void Update()
     {
-            UpdateMovementAnimation();
-            UpdateFacingDirection();
+        UpdateMovementAnimation();
+        UpdateFacingDirection();
     }
 
-        void UpdateMovementAnimation()
+    void UpdateMovementAnimation()
+    {
+        float speed = Mathf.Abs(movement.GetMoveDirection());
+
+        animator.SetFloat("Speed", speed);
+    }
+
+    void UpdateFacingDirection()
+    {
+        float direction = movement.GetMoveDirection();
+
+        if (direction > 0)
         {
-            float speed = Mathf.Abs(movement.GetMoveDirection());
-
-            animator.SetFloat("Speed", speed);
+            spriteRenderer.flipX = false;
         }
-
-        void UpdateFacingDirection()
+        else if (direction < 0)
         {
-            float direction = movement.GetMoveDirection();
-
-            if (direction > 0)
-            {
-                spriteRenderer.flipX = false;
-            }
-            else if (direction < 0)
-            {
-                spriteRenderer.flipX = true;
-            }
+            spriteRenderer.flipX = true;
         }
+    }
 
     public void PlayAttack()
     {

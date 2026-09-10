@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class EnemyController : MonoBehaviour
 {
@@ -22,16 +21,6 @@ public class EnemyController : MonoBehaviour
 
     void Update()
     {
-        // =========================
-        // TEST JUMP
-        // =========================
-
-        if (Keyboard.current != null &&
-            Keyboard.current.jKey.wasPressedThisFrame)
-        {
-            movement.Jump();
-        }
-
         // =========================
         // KNOCKBACK LOCKOUT
         // =========================

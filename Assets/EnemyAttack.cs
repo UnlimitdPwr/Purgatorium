@@ -2,28 +2,23 @@ using UnityEngine;
 
 public class EnemyAttack : MonoBehaviour
 {
-
     public int damage = 10;
     public float attackCooldown = 1f;
 
     private float attackTimer;
 
-    private EnemyAnimation animation;
+    private EnemyAnimation anim;
     private EnemyHitbox hitbox;
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
 
     void Awake()
     {
-        animation = GetComponent<EnemyAnimation>();
+        anim = GetComponent<EnemyAnimation>();
         hitbox = GetComponentInChildren<EnemyHitbox>();
+
+        if (hitbox == null)
+            Debug.LogError("EnemyAttack: no EnemyHitbox found in children.", this);
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (attackTimer > 0f)
@@ -39,18 +34,24 @@ public class EnemyAttack : MonoBehaviour
 
         Debug.Log("Enemy attacks for " + damage + " damage!");
 
-        animation.PlayAttack();
+        anim.PlayAttack();
 
         attackTimer = attackCooldown;
     }
 
+    // =========================
+    // ANIMATION EVENT HOOKS
+    // =========================
+
     public void EnableHitbox()
     {
-        hitbox.EnableHitbox(damage);
+        if (hitbox != null)
+            hitbox.EnableHitbox(damage);
     }
 
     public void DisableHitbox()
     {
-        hitbox.DisableHitbox();
+        if (hitbox != null)
+            hitbox.DisableHitbox();
     }
 }

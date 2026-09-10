@@ -14,7 +14,7 @@ public class ParryScript : MonoBehaviour
     [SerializeField] private float startDelay = 0.05f;
 
     [Tooltip("How long the parry window stays open, in seconds.")]
-    [SerializeField] private float windowDuration = 0.30f;
+    [SerializeField] private float windowDuration = 0.55f;
 
     [Tooltip("Seconds from one TryParry() to the next. Keep this above the " +
              "clip length so parry can't be spammed.")]

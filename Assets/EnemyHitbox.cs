@@ -40,9 +40,11 @@ public class EnemyHitbox : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        Debug.Log("Enemy hitbox detected: " + other.name);
-
         if (!canDamage)
+            return;
+
+        // Only the player is a valid target for this attack.
+        if (!other.CompareTag("Player"))
             return;
 
         // =========================
@@ -79,10 +81,7 @@ public class EnemyHitbox : MonoBehaviour
         PlayerHealth playerHealth = other.GetComponentInParent<PlayerHealth>();
 
         if (playerHealth == null)
-        {
-            Debug.Log("No PlayerHealth found on " + other.name);
             return;
-        }
 
         Debug.Log("PLAYER HIT! Applying " + damage + " damage.");
 

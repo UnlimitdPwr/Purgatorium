@@ -8,16 +8,20 @@ public class EnemyDetection : MonoBehaviour
 
     void Awake()
     {
-        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
-
-        if (playerObject != null)
-        {
-            player = playerObject.transform;
-        }
+        AcquirePlayer();
     }
+
+    // =========================
+    // DETECTION
+    // =========================
 
     public bool CanDetectPlayer()
     {
+        // The player reference can be lost if the player is (re)spawned after
+        // this component woke up — try to re-acquire it before giving up.
+        if (player == null)
+            AcquirePlayer();
+
         if (player == null)
             return false;
 
@@ -37,15 +41,15 @@ public class EnemyDetection : MonoBehaviour
         return null;
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    // =========================
+    // INTERNAL
+    // =========================
 
-    // Update is called once per frame
-    void Update()
+    private void AcquirePlayer()
     {
-        
+        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+
+        if (playerObject != null)
+            player = playerObject.transform;
     }
 }

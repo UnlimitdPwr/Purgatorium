@@ -3,7 +3,6 @@ using UnityEngine.InputSystem;
 
 public class PlayerInput : MonoBehaviour
 {
-
     public float MoveInput { get; private set; }
 
     public bool JumpPressed { get; private set; }
@@ -11,25 +10,28 @@ public class PlayerInput : MonoBehaviour
 
     void Update()
     {
+        Keyboard keyboard = Keyboard.current;
+
+        if (keyboard == null)
+        {
+            // No keyboard connected this frame — report neutral input.
+            MoveInput = 0f;
+            JumpPressed = false;
+            ParryPressed = false;
+            return;
+        }
+
         // Movement input
         MoveInput = 0f;
 
-        if (Keyboard.current.aKey.isPressed)
+        if (keyboard.aKey.isPressed)
             MoveInput = -1f;
 
-        if (Keyboard.current.dKey.isPressed)
+        if (keyboard.dKey.isPressed)
             MoveInput = 1f;
 
         // Button inputs
-        JumpPressed = Keyboard.current.spaceKey.wasPressedThisFrame;
-        ParryPressed = Keyboard.current.leftShiftKey.wasPressedThisFrame;
+        JumpPressed = keyboard.spaceKey.wasPressedThisFrame;
+        ParryPressed = keyboard.leftShiftKey.wasPressedThisFrame;
     }
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    
 }

@@ -18,15 +18,21 @@ public class EnemyMovement : MonoBehaviour
     // =========================
 
     private Rigidbody2D rb;
+    private EnemyKnockback knockback;
     private float moveDirection;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        knockback = GetComponent<EnemyKnockback>();
     }
 
     void FixedUpdate()
     {
+        // Knockback owns the Rigidbody while it is active — don't overwrite the impulse.
+        if (knockback != null && knockback.IsKnockedBack)
+            return;
+
         rb.linearVelocity = new Vector2(
             moveDirection * moveSpeed,
             rb.linearVelocity.y

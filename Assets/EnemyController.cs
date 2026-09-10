@@ -9,6 +9,7 @@ public class EnemyController : MonoBehaviour
     private EnemyDetection detection;
     private EnemyTargeting targeting;
     private EnemyAttack attack;
+    private EnemyKnockback knockback;
 
     void Awake()
     {
@@ -16,6 +17,7 @@ public class EnemyController : MonoBehaviour
         detection = GetComponent<EnemyDetection>();
         targeting = GetComponent<EnemyTargeting>();
         attack = GetComponent<EnemyAttack>();
+        knockback = GetComponent<EnemyKnockback>();
     }
 
     void Update()
@@ -28,6 +30,17 @@ public class EnemyController : MonoBehaviour
             Keyboard.current.jKey.wasPressedThisFrame)
         {
             movement.Jump();
+        }
+
+        // =========================
+        // KNOCKBACK LOCKOUT
+        // =========================
+
+        // While stunned, don't chase or attack — let the impulse play out.
+        if (knockback != null && knockback.IsKnockedBack)
+        {
+            movement.Stop();
+            return;
         }
 
         // =========================

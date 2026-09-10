@@ -45,6 +45,37 @@ public class EnemyHitbox : MonoBehaviour
         if (!canDamage)
             return;
 
+        // =========================
+        // PARRY CHECK (before any damage logic)
+        // =========================
+
+        ParryScript parry = other.GetComponentInParent<ParryScript>();
+
+        if (parry != null)
+        {
+            EnemyKnockback knockback = GetComponentInParent<EnemyKnockback>();
+            GameObject attacker = knockback != null ? knockback.gameObject : gameObject;
+
+            if (parry.TryParryAttack(transform.position, attacker))
+            {
+                Debug.Log("Attack PARRIED by " + other.name);
+
+                // Consume this swing so it can't hit again.
+                canDamage = false;
+
+                if (knockback != null)
+                {
+                    knockback.ApplyKnockback(parry.transform.position);
+                }
+
+                return;
+            }
+        }
+
+        // =========================
+        // DAMAGE
+        // =========================
+
         PlayerHealth playerHealth = other.GetComponentInParent<PlayerHealth>();
 
         if (playerHealth == null)

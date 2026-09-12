@@ -70,4 +70,15 @@ public class PlayerAnimation : MonoBehaviour
     {
         animator.SetTrigger("Parry");
     }
+
+    // =========================
+    // DASH ANIMATION
+    // =========================
+
+    // No-op until a "Dash" trigger exists on the Animator Controller — SetTrigger
+    // on an undefined parameter is safely ignored by Unity.
+    public void PlayDashAnimation()
+    {
+        animator.SetTrigger("Dash");
+    }
 }

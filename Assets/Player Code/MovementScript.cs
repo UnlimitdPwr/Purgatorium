@@ -21,15 +21,14 @@ public class MovementScript : MonoBehaviour
 
     private Rigidbody2D rb;
     private DashScript dash;
+    private PlayerStamina stamina;
     private float moveInput;
-
-    // Set by DashScript while grounded and holding the dash button; 1 otherwise.
-    public float SpeedMultiplier { get; set; } = 1f;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         dash = GetComponent<DashScript>();
+        stamina = GetComponent<PlayerStamina>();
     }
 
     public void SetMoveInput(float input)
@@ -54,8 +53,16 @@ public class MovementScript : MonoBehaviour
         if (dash != null && dash.IsDashing)
             return;
 
+        float speedMultiplier = 1f;
+
+        if (dash != null)
+            speedMultiplier *= dash.SprintSpeedMultiplier;
+
+        if (stamina != null)
+            speedMultiplier *= stamina.SpeedMultiplier;
+
         rb.linearVelocity = new Vector2(
-            moveInput * moveSpeed * SpeedMultiplier,
+            moveInput * moveSpeed * speedMultiplier,
             rb.linearVelocity.y
         );
     }

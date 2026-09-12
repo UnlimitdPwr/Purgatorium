@@ -7,6 +7,8 @@ public class PlayerInput : MonoBehaviour
 
     public bool JumpPressed { get; private set; }
     public bool ParryPressed { get; private set; }
+    public bool DashPressed { get; private set; }
+    public bool DashHeld { get; private set; }
 
     void Update()
     {
@@ -18,6 +20,8 @@ public class PlayerInput : MonoBehaviour
             MoveInput = 0f;
             JumpPressed = false;
             ParryPressed = false;
+            DashPressed = false;
+            DashHeld = false;
             return;
         }
 
@@ -33,5 +37,7 @@ public class PlayerInput : MonoBehaviour
         // Button inputs
         JumpPressed = keyboard.spaceKey.wasPressedThisFrame;
         ParryPressed = keyboard.leftShiftKey.wasPressedThisFrame;
+        DashPressed = keyboard.leftCtrlKey.wasPressedThisFrame;
+        DashHeld = keyboard.leftCtrlKey.isPressed;
     }
 }

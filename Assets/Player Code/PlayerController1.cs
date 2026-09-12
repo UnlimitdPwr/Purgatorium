@@ -5,12 +5,14 @@ public class PlayerController1 : MonoBehaviour
     private PlayerInput playerInput;
     private MovementScript movement;
     private ParryScript parry;
+    private DashScript dash;
 
     void Start()
     {
         playerInput = GetComponent<PlayerInput>();
         movement = GetComponent<MovementScript>();
         parry = GetComponent<ParryScript>();
+        dash = GetComponent<DashScript>();
     }
 
     void Update()
@@ -18,6 +20,7 @@ public class PlayerController1 : MonoBehaviour
         HandleMovement();
         HandleJump();
         HandleParry();
+        HandleDash();
     }
 
     // =========================
@@ -47,6 +50,21 @@ public class PlayerController1 : MonoBehaviour
     {
         if (playerInput.ParryPressed)
             parry.TryParry();
+    }
+
+    // =========================
+    // DASH
+    // =========================
+
+    void HandleDash()
+    {
+        if (dash == null)
+            return;
+
+        dash.SetDashHeld(playerInput.DashHeld);
+
+        if (playerInput.DashPressed)
+            dash.TryDash();
     }
 }
     

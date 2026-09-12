@@ -37,7 +37,7 @@ public class PlayerInput : MonoBehaviour
         // Button inputs
         JumpPressed = keyboard.spaceKey.wasPressedThisFrame;
         ParryPressed = keyboard.leftShiftKey.wasPressedThisFrame;
-        DashPressed = keyboard.leftCtrlKey.wasPressedThisFrame;
-        DashHeld = keyboard.leftCtrlKey.isPressed;
+        DashPressed = keyboard.rightShiftKey.wasPressedThisFrame;
+        DashHeld = keyboard.rightShiftKey.isPressed;
     }
 }

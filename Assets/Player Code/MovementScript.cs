@@ -20,11 +20,16 @@ public class MovementScript : MonoBehaviour
     // =========================
 
     private Rigidbody2D rb;
+    private DashScript dash;
     private float moveInput;
+
+    // Set by DashScript while grounded and holding the dash button; 1 otherwise.
+    public float SpeedMultiplier { get; set; } = 1f;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        dash = GetComponent<DashScript>();
     }
 
     public void SetMoveInput(float input)
@@ -45,8 +50,12 @@ public class MovementScript : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Dash owns the Rigidbody while it's active — don't overwrite the burst.
+        if (dash != null && dash.IsDashing)
+            return;
+
         rb.linearVelocity = new Vector2(
-            moveInput * moveSpeed,
+            moveInput * moveSpeed * SpeedMultiplier,
             rb.linearVelocity.y
         );
     }

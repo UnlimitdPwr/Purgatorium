@@ -36,6 +36,7 @@ public class DashScript : MonoBehaviour
     private MovementScript movement;
     private SpriteRenderer spriteRenderer;
     private PlayerAnimation playerAnimation;
+    private PlayerStamina stamina;
 
     private bool dashInputHeld;
     private float dashTimer;
@@ -45,6 +46,10 @@ public class DashScript : MonoBehaviour
 
     public bool IsDashing => dashTimer > 0f;
     public bool IsOnCooldown => cooldownTimer > 0f;
+    public bool IsSprinting { get; private set; }
+
+    // 1 normally, groundHoldSpeedMultiplier while sprinting — MovementScript multiplies this in.
+    public float SprintSpeedMultiplier => IsSprinting ? groundHoldSpeedMultiplier : 1f;
 
     // Fired when a dash starts / ends. Hook VFX / audio here without editing this script.
     public event Action OnDashStarted;
@@ -60,6 +65,7 @@ public class DashScript : MonoBehaviour
         movement = GetComponent<MovementScript>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         playerAnimation = GetComponent<PlayerAnimation>();
+        stamina = GetComponent<PlayerStamina>();
     }
 
     // =========================
@@ -75,6 +81,9 @@ public class DashScript : MonoBehaviour
         bool grounded = movement != null && movement.IsGrounded();
 
         if (!grounded && airDashesUsed >= maxAirDashes)
+            return;
+
+        if (stamina != null && !stamina.TryConsumeDash())
             return;
 
         dashDirection = (spriteRenderer != null && spriteRenderer.flipX) ? -1f : 1f;
@@ -127,8 +136,14 @@ public class DashScript : MonoBehaviour
         if (grounded)
             airDashesUsed = 0;
 
-        // Ground hold: sustained speed boost while the button stays down.
-        movement.SpeedMultiplier = (grounded && dashInputHeld) ? groundHoldSpeedMultiplier : 1f;
+        // Ground hold: sustained speed boost while the button stays down, as long
+        // as stamina allows sprinting. MovementScript reads SprintSpeedMultiplier.
+        bool wantsSprint = grounded && dashInputHeld;
+        bool sprintAllowed = stamina == null || stamina.CanSprint;
+        IsSprinting = wantsSprint && sprintAllowed;
+
+        if (stamina != null)
+            stamina.SetSprinting(IsSprinting);
     }
 
     void FixedUpdate()

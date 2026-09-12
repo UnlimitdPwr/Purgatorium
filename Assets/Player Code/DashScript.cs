@@ -21,7 +21,7 @@ public class DashScript : MonoBehaviour
     [Header("Ground Hold")]
     [Tooltip("While grounded and holding the dash button, normal movement speed is " +
              "multiplied by this factor — on top of, and outlasting, the initial burst.")]
-    [SerializeField] private float groundHoldSpeedMultiplier = 1.3f;
+    [SerializeField] private float groundHoldSpeedMultiplier = 1.5f;
 
     [Header("Air Dash")]
     [Tooltip("Airborne dashes allowed before landing resets the count. Set high to " +

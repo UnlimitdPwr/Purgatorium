@@ -7,6 +7,10 @@ public class PlayerController1 : MonoBehaviour
     private ParryScript parry;
     private DashScript dash;
 
+    private bool isResting;
+
+    public bool IsResting => isResting;
+
     void Start()
     {
         playerInput = GetComponent<PlayerInput>();
@@ -17,10 +21,25 @@ public class PlayerController1 : MonoBehaviour
 
     void Update()
     {
+        if (isResting)
+        {
+            movement.SetMoveInput(0f);
+            return;
+        }
+
         HandleMovement();
         HandleJump();
         HandleParry();
         HandleDash();
+    }
+
+    // =========================
+    // RESTING
+    // =========================
+
+    public void SetResting(bool resting)
+    {
+        isResting = resting;
     }
 
     // =========================
@@ -66,5 +85,6 @@ public class PlayerController1 : MonoBehaviour
         if (playerInput.DashPressed)
             dash.TryDash();
     }
+
 }
     

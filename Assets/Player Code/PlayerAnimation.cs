@@ -6,8 +6,10 @@ public class PlayerAnimation : MonoBehaviour
     private MovementScript movement;
     private SpriteRenderer spriteRenderer;
 
+    private bool isDead;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    private void Awake()
     {
         animator = GetComponent<Animator>();
         movement = GetComponent<MovementScript>();
@@ -17,6 +19,9 @@ public class PlayerAnimation : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (isDead)
+            return;
+
         UpdateMovementAnimation();
         UpdateJumpAnimation();
         UpdateFacingDirection();
@@ -80,5 +85,34 @@ public class PlayerAnimation : MonoBehaviour
     public void PlayDashAnimation()
     {
         animator.SetTrigger("Dash");
+    }
+
+    // =========================
+    // DEATH ANIMATION
+    // =========================
+
+    public void PlayDeathAnimation()
+    {
+        isDead = true;
+        animator.SetTrigger("Death");
+    }
+
+    public void ResetFromDeath()
+    {
+        Debug.Log("RESETTING ANIMATION FROM DEATH");
+
+        // Stop the death trigger from firing again
+        animator.ResetTrigger("Death");
+
+        // Reset the values that control normal animation
+        animator.SetFloat("Speed", 0f);
+        animator.SetFloat("VerticalVelocity", 0f);
+        animator.SetBool("IsGrounded", true);
+
+        // Force Animator to Idle, starting at the first frame
+        animator.Play("HeroKnight_Idle", 0, 0f);
+
+        // Make sure normal animation updates resume
+        isDead = false;
     }
 }

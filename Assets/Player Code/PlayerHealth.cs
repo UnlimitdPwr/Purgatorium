@@ -34,11 +34,6 @@ public class PlayerHealth : MonoBehaviour
         Debug.Log("PLAYER HEALTH: " + currentHealth + "/" + maxHealth);
 
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
-
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
     }
 
     public void Heal(int amount)
@@ -50,10 +45,18 @@ public class PlayerHealth : MonoBehaviour
 
         if (currentHealth > maxHealth)
             currentHealth = maxHealth;
+
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
-    private void Die()
+    public void RestoreFullHealth()
     {
-        Debug.Log("Player died");
+        currentHealth = maxHealth;
+
+        Debug.Log("PLAYER HEALTH RESTORED: " +
+                  currentHealth + "/" + maxHealth);
+
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
+
 }

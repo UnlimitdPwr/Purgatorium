@@ -5,6 +5,7 @@ public class PlayerAnimation : MonoBehaviour
     private Animator animator;
     private MovementScript movement;
     private SpriteRenderer spriteRenderer;
+    private BlockScript block;
 
     private bool isDead;
 
@@ -14,6 +15,7 @@ public class PlayerAnimation : MonoBehaviour
         animator = GetComponent<Animator>();
         movement = GetComponent<MovementScript>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        block = GetComponent<BlockScript>();
     }
 
     // Update is called once per frame
@@ -25,6 +27,7 @@ public class PlayerAnimation : MonoBehaviour
         UpdateMovementAnimation();
         UpdateJumpAnimation();
         UpdateFacingDirection();
+        UpdateBlockAnimation();
     }
 
     // =========================
@@ -75,6 +78,26 @@ public class PlayerAnimation : MonoBehaviour
     {
         animator.SetTrigger("Parry");
     }
+
+    void UpdateBlockAnimation()
+    {
+        if (block == null)
+            return;
+
+        animator.SetBool("IsBlocking", block.IsBlocking);
+    }
+
+    // =========================
+    // BLOCK ANIMATION
+    // =========================
+
+    public void PlayBlockHitAnimation()
+    {
+        Debug.Log("PLAYING BLOCK HIT ANIMATION");
+
+        animator.Play("HeroKnight_BlockNoEffect", 0, 0f);
+    }
+
 
     // =========================
     // DASH ANIMATION

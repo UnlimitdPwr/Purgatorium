@@ -6,6 +6,7 @@ public class PlayerController1 : MonoBehaviour
     private MovementScript movement;
     private ParryScript parry;
     private DashScript dash;
+    private BlockScript block;
 
     private bool isResting;
 
@@ -17,13 +18,15 @@ public class PlayerController1 : MonoBehaviour
         movement = GetComponent<MovementScript>();
         parry = GetComponent<ParryScript>();
         dash = GetComponent<DashScript>();
-    }
+        block = GetComponent<BlockScript>();
+}
 
     void Update()
     {
         if (isResting)
         {
             movement.SetMoveInput(0f);
+            block.StopBlocking();
             return;
         }
 
@@ -31,6 +34,7 @@ public class PlayerController1 : MonoBehaviour
         HandleJump();
         HandleParry();
         HandleDash();
+        HandleBlock();
     }
 
     // =========================
@@ -86,5 +90,17 @@ public class PlayerController1 : MonoBehaviour
             dash.TryDash();
     }
 
+    //BLOCKING
+
+    void HandleBlock()
+    {
+        if (block == null)
+            return;
+
+        if (playerInput.BlockHeld)
+            block.StartBlocking();
+        else
+            block.StopBlocking();
+    }
 }
     

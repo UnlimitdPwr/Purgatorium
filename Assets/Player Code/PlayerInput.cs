@@ -9,6 +9,7 @@ public class PlayerInput : MonoBehaviour
     public bool ParryPressed { get; private set; }
     public bool DashPressed { get; private set; }
     public bool DashHeld { get; private set; }
+    public bool BlockHeld { get; private set; }
 
     void Update()
     {
@@ -39,5 +40,6 @@ public class PlayerInput : MonoBehaviour
         ParryPressed = keyboard.leftShiftKey.wasPressedThisFrame;
         DashPressed = keyboard.rightShiftKey.wasPressedThisFrame;
         DashHeld = keyboard.rightShiftKey.isPressed;
+        BlockHeld = keyboard.leftCtrlKey.isPressed;
     }
 }

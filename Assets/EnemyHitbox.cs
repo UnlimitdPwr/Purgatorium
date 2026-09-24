@@ -70,6 +70,13 @@ public class EnemyHitbox : MonoBehaviour
                     knockback.ApplyKnockback(parry.transform.position);
                 }
 
+                EnemyHealth health = GetComponentInParent<EnemyHealth>();
+
+                if (health != null)
+                {
+                    health.ApplyParry();
+                }
+
                 return;
             }
         }

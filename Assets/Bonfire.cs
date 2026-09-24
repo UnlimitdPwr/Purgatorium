@@ -5,42 +5,16 @@ public class Bonfire : MonoBehaviour, IInteractable
     [Header("Bonfire")]
     [SerializeField] private Transform respawnPoint;
 
-    [Header("Visuals")]
-    [SerializeField] private GameObject fireOff;
-    [SerializeField] private GameObject fireOn;
 
-    [Header("UI")]
-    [SerializeField] private BonfireUI bonfireUI;
-
-    private bool isActivated = false;
-
-    private void Start()
-    {
-        UpdateVisuals();
-    }
-
+    // This function is called by the InteractionScript when the player interacts with the active bonfire.
     public void Interact(GameObject interactor)
     {
-        if (!isActivated)
-        {
-            Activate();
-            return;
-        }
-
+        // All bonfires are already active when they are spawned, // so interacting with one immediately allows the player to rest.
         Rest(interactor);
     }
 
-    private void Activate()
-    {
-        isActivated = true;
-
-        UpdateVisuals();
-
-        Debug.Log("Bonfire activated!");
-
-
-    }
-
+    // This function restores the player, sets this bonfire as the checkpoint,
+    // locks the player and opens the bonfire UI.
     private void Rest(GameObject interactor)
     {
         PlayerHealth playerHealth =
@@ -51,10 +25,13 @@ public class Bonfire : MonoBehaviour, IInteractable
             playerHealth.RestoreFullHealth();
         }
 
-        // This bonfire becomes the current checkpoint
-        CheckpointManager.Instance.SetCheckpoint(this);
+        // This bonfire becomes the current checkpoint.
+        if (CheckpointManager.Instance != null)
+        {
+            CheckpointManager.Instance.SetCheckpoint(this);
+        }
 
-        // Lock player movement
+        // Lock player movement and actions.
         PlayerController1 controller =
             interactor.GetComponent<PlayerController1>();
 
@@ -63,24 +40,27 @@ public class Bonfire : MonoBehaviour, IInteractable
             controller.SetResting(true);
         }
 
-        // Open the resting UI
+        // Find the BonfireUI that exists in the scene.
+        BonfireUI bonfireUI =
+            FindFirstObjectByType<BonfireUI>(
+                FindObjectsInactive.Include
+            );
+
         if (bonfireUI != null)
         {
             bonfireUI.Open(interactor, this);
+        }
+        else
+        {
+            Debug.LogWarning(
+                "No BonfireUI found in the scene."
+            );
         }
 
         Debug.Log("Player is resting.");
     }
 
-    private void UpdateVisuals()
-    {
-        if (fireOff != null)
-            fireOff.SetActive(!isActivated);
-
-        if (fireOn != null)
-            fireOn.SetActive(isActivated);
-    }
-
+    // This function gives the checkpoint system the location where the player should respawn after dying.
     public Transform GetRespawnPoint()
     {
         return respawnPoint;

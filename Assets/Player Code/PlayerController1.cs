@@ -7,6 +7,7 @@ public class PlayerController1 : MonoBehaviour
     private ParryScript parry;
     private DashScript dash;
     private BlockScript block;
+    private BonfirePlacement bonfirePlacement;
 
     private bool isResting;
 
@@ -19,7 +20,8 @@ public class PlayerController1 : MonoBehaviour
         parry = GetComponent<ParryScript>();
         dash = GetComponent<DashScript>();
         block = GetComponent<BlockScript>();
-}
+        bonfirePlacement = GetComponent<BonfirePlacement>();
+    }
 
     void Update()
     {
@@ -35,6 +37,7 @@ public class PlayerController1 : MonoBehaviour
         HandleParry();
         HandleDash();
         HandleBlock();
+        HandleBonfirePlacement();
     }
 
     // =========================
@@ -101,6 +104,19 @@ public class PlayerController1 : MonoBehaviour
             block.StartBlocking();
         else
             block.StopBlocking();
+    }
+
+    // =========================
+    // BONFIRE
+    // =========================
+
+    void HandleBonfirePlacement()
+    {
+        if (bonfirePlacement == null)
+            return;
+
+        if (playerInput.PlaceBonfirePressed)
+            bonfirePlacement.TryPlaceBonfire();
     }
 }
     

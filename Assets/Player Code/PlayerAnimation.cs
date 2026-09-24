@@ -70,6 +70,11 @@ public class PlayerAnimation : MonoBehaviour
             spriteRenderer.flipX = true;
     }
 
+    public bool IsFacingLeft()
+    {
+        return spriteRenderer.flipX;
+    }
+
     // =========================
     // PARRY ANIMATION
     // =========================

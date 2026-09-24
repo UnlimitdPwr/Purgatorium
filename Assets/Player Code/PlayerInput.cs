@@ -11,6 +11,8 @@ public class PlayerInput : MonoBehaviour
     public bool DashHeld { get; private set; }
     public bool BlockHeld { get; private set; }
 
+    public bool PlaceBonfirePressed { get; private set; }
+
     void Update()
     {
         Keyboard keyboard = Keyboard.current;
@@ -23,6 +25,7 @@ public class PlayerInput : MonoBehaviour
             ParryPressed = false;
             DashPressed = false;
             DashHeld = false;
+            PlaceBonfirePressed = false;
             return;
         }
 
@@ -41,5 +44,12 @@ public class PlayerInput : MonoBehaviour
         DashPressed = keyboard.rightShiftKey.wasPressedThisFrame;
         DashHeld = keyboard.rightShiftKey.isPressed;
         BlockHeld = keyboard.leftCtrlKey.isPressed;
+
+        // =========================
+        // BONFIRE
+        // =========================
+
+        PlaceBonfirePressed =
+            keyboard.qKey.wasPressedThisFrame;
     }
 }

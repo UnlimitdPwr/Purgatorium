@@ -13,6 +13,9 @@ public class PlayerInput : MonoBehaviour
 
     public bool PlaceBonfirePressed { get; private set; }
 
+    public bool PickupPressed { get; private set; }
+    public bool InventoryPressed { get; private set; }
+
     void Update()
     {
         Keyboard keyboard = Keyboard.current;
@@ -51,5 +54,21 @@ public class PlayerInput : MonoBehaviour
 
         PlaceBonfirePressed =
             keyboard.qKey.wasPressedThisFrame;
+
+        // =========================
+        // ITEM PICKUP
+        // =========================
+
+        // This detects when the player presses E to pick up a nearby item.
+        PickupPressed =
+            keyboard.eKey.wasPressedThisFrame;
+
+        // =========================
+        // INVENTORY
+        // =========================
+
+        // This detects when the player presses I to open or close the inventory.
+        InventoryPressed =
+            keyboard.iKey.wasPressedThisFrame;
     }
 }

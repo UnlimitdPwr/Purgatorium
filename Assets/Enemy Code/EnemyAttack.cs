@@ -8,11 +8,13 @@ public class EnemyAttack : MonoBehaviour
     private float attackTimer;
 
     private EnemyAnimation anim;
+    private EnemyMovement movement;
     private EnemyHitbox hitbox;
 
     void Awake()
     {
         anim = GetComponent<EnemyAnimation>();
+        movement = GetComponent<EnemyMovement>();
         hitbox = GetComponentInChildren<EnemyHitbox>();
 
         if (hitbox == null)
@@ -45,8 +47,14 @@ public class EnemyAttack : MonoBehaviour
 
     public void EnableHitbox()
     {
-        if (hitbox != null)
-            hitbox.EnableHitbox(damage);
+        if (hitbox == null)
+            return;
+
+        // Put the hitbox on the side the enemy is facing before it goes live.
+        if (movement != null)
+            hitbox.SetFacing(movement.GetFacingDirection());
+
+        hitbox.EnableHitbox(damage);
     }
 
     public void DisableHitbox()

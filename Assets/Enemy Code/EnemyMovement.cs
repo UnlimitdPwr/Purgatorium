@@ -21,6 +21,10 @@ public class EnemyMovement : MonoBehaviour
     private EnemyKnockback knockback;
     private float moveDirection;
 
+    // 1 = facing right, -1 = facing left. The sprite art faces right, so this
+    // starts at 1. Movement updates it; Face() sets it without moving.
+    private float facingDirection = 1f;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -46,6 +50,17 @@ public class EnemyMovement : MonoBehaviour
     public void Move(float direction)
     {
         moveDirection = direction;
+
+        if (direction != 0f)
+            facingDirection = Mathf.Sign(direction);
+    }
+
+    // Turn toward a direction without moving (e.g. to face the player
+    // before an attack).
+    public void Face(float direction)
+    {
+        if (direction != 0f)
+            facingDirection = Mathf.Sign(direction);
     }
 
     public void Stop()
@@ -88,6 +103,11 @@ public class EnemyMovement : MonoBehaviour
     public float GetMoveDirection()
     {
         return moveDirection;
+    }
+
+    public float GetFacingDirection()
+    {
+        return facingDirection;
     }
 
     public float GetVerticalVelocity()

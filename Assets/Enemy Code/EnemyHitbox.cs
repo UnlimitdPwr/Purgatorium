@@ -7,6 +7,12 @@ public class EnemyHitbox : MonoBehaviour
     private int damage;
     private bool canDamage;
 
+    // The hitbox is laid out in the scene for an enemy facing right (the way
+    // the sprite art faces). These remember that layout so SetFacing() can
+    // mirror it to the left.
+    private float designLocalX;
+    private float designOffsetX;
+
     void Awake()
     {
         hitbox = GetComponent<Collider2D>();
@@ -17,7 +23,31 @@ public class EnemyHitbox : MonoBehaviour
             return;
         }
 
+        designLocalX = transform.localPosition.x;
+        designOffsetX = hitbox.offset.x;
+
         hitbox.enabled = false;
+    }
+
+    // =========================
+    // FACING
+    // =========================
+
+    // direction: 1 = facing right, -1 = facing left.
+    public void SetFacing(float direction)
+    {
+        if (hitbox == null)
+            return;
+
+        float sign = direction < 0f ? -1f : 1f;
+
+        Vector3 localPosition = transform.localPosition;
+        localPosition.x = designLocalX * sign;
+        transform.localPosition = localPosition;
+
+        Vector2 offset = hitbox.offset;
+        offset.x = designOffsetX * sign;
+        hitbox.offset = offset;
     }
 
     public void EnableHitbox(int damageAmount)

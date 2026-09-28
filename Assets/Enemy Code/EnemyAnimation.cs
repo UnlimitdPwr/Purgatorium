@@ -28,16 +28,8 @@ public class EnemyAnimation : MonoBehaviour
 
     void UpdateFacingDirection()
     {
-        float direction = movement.GetMoveDirection();
-
-        if (direction > 0)
-        {
-            spriteRenderer.flipX = false;
-        }
-        else if (direction < 0)
-        {
-            spriteRenderer.flipX = true;
-        }
+        // The sprite art faces right; flip it when the enemy faces left.
+        spriteRenderer.flipX = movement.GetFacingDirection() < 0f;
     }
 
     public void PlayAttack()

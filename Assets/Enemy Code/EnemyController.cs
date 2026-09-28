@@ -102,6 +102,10 @@ public class EnemyController : MonoBehaviour
     {
         movement.Stop();
 
+        // Turn toward the target first — standing still never updates facing,
+        // so without this the enemy could swing the wrong way.
+        movement.Face(targeting.GetHorizontalDirectionToTarget());
+
         attack.Attack();
     }
 }

@@ -17,6 +17,9 @@ using UnityEngine.SceneManagement;
 //    slash arc in front of the enemy (for an enemy facing right, the way the art
 //    faces). EnemyHitbox mirrors it at runtime when the enemy faces left.
 //
+// 3. RANGE — an EnemyController whose attackRange is longer than the slash can
+//    reach would swing at a player it can't hit, so it's lowered to fit.
+//
 // Safe to re-run.
 public static class EnemyAttackSetup
 {
@@ -30,6 +33,10 @@ public static class EnemyAttackSetup
     // from ~0.14 behind the pivot to ~0.30 in front, ~0.33 to ~0.88 up.
     static readonly Vector2 HitboxCenter = new Vector2(0.08f, 0.6f);
     static readonly Vector2 HitboxSize = new Vector2(0.44f, 0.55f);
+
+    // attackRange is measured centre to centre, so it can exceed the slash's
+    // front edge by roughly half a body width and still connect.
+    const float RangeBeyondSlash = 0.3f;
 
     [MenuItem("Tools/Enemy Attack/Fix Attack Timing And Hitbox")]
     public static void FixAttackTimingAndHitbox()
@@ -146,8 +153,10 @@ public static class EnemyAttackSetup
             else
                 Debug.LogWarning("EnemyAttackSetup: unsupported collider on '" + hitbox.name + "' — only moved it.", hitbox);
 
-            Debug.Log("EnemyAttackSetup: placed hitbox '" + hitbox.name + "' on '" + hitboxTransform.root.name + "'", hitbox);
+            Debug.Log("EnemyAttackSetup: placed hitbox '" + hitboxTransform.name + "' on '" + hitboxTransform.root.name + "'", hitbox);
             changed = true;
+
+            changed |= FitAttackRange(hitbox.GetComponentInParent<EnemyController>());
         }
 
         if (!changed)
@@ -160,5 +169,27 @@ public static class EnemyAttackSetup
         EditorSceneManager.SaveScene(scene);
 
         Debug.Log("EnemyAttackSetup: done — " + scene.name + " saved.");
+    }
+
+    static bool FitAttackRange(EnemyController controller)
+    {
+        if (controller == null)
+            return false;
+
+        float scaleX = Mathf.Abs(controller.transform.lossyScale.x);
+        float slashFrontEdge = (HitboxCenter.x + HitboxSize.x / 2f) * scaleX;
+        float maxRange = slashFrontEdge + RangeBeyondSlash;
+
+        if (controller.attackRange <= maxRange + 0.001f)
+            return false;
+
+        float before = controller.attackRange;
+
+        Undo.RecordObject(controller, "Fit attack range");
+        controller.attackRange = Mathf.Round(maxRange * 100f) / 100f;
+
+        Debug.Log("EnemyAttackSetup: '" + controller.name + "' attackRange " + before + " -> " +
+                  controller.attackRange + " so the slash can reach what it swings at.", controller);
+        return true;
     }
 }

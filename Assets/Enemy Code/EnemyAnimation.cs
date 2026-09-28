@@ -36,4 +36,19 @@ public class EnemyAnimation : MonoBehaviour
     {
         animator.SetTrigger("Attack");
     }
+
+    // Length in seconds of a clip on this enemy's Animator, or 0 if missing.
+    public float GetClipLength(string clipName)
+    {
+        if (animator == null || animator.runtimeAnimatorController == null)
+            return 0f;
+
+        foreach (AnimationClip clip in animator.runtimeAnimatorController.animationClips)
+        {
+            if (clip.name == clipName)
+                return clip.length;
+        }
+
+        return 0f;
+    }
 }

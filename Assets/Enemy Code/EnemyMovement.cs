@@ -14,10 +14,21 @@ public class EnemyMovement : MonoBehaviour
     public LayerMask groundLayer;
 
     // =========================
+    // LEDGE / WALL CHECK
+    // =========================
+
+    [Tooltip("How far past the front of the body to look for a ledge or wall.")]
+    public float edgeLookAhead = 0.15f;
+
+    [Tooltip("How far down to look for ground in front before calling it a ledge.")]
+    public float ledgeCheckDepth = 1f;
+
+    // =========================
     // PRIVATE VARIABLES
     // =========================
 
     private Rigidbody2D rb;
+    private Collider2D body;
     private EnemyKnockback knockback;
     private float moveDirection;
 
@@ -28,6 +39,7 @@ public class EnemyMovement : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        body = GetComponent<Collider2D>();
         knockback = GetComponent<EnemyKnockback>();
     }
 
@@ -97,12 +109,55 @@ public class EnemyMovement : MonoBehaviour
     }
 
     // =========================
+    // LEDGE / WALL CHECK
+    // =========================
+
+    // False when a step in this direction would walk off a ledge or into a
+    // wall. EnemyController checks this before moving so patrols and chases
+    // stop at the edge instead of falling off it.
+    public bool CanMove(float direction)
+    {
+        if (direction == 0f || body == null)
+            return true;
+
+        float sign = Mathf.Sign(direction);
+        Bounds bounds = body.bounds;
+
+        // Ledge: is there ground just in front of the feet?
+        Vector2 ledgeProbe = new Vector2(
+            bounds.center.x + sign * (bounds.extents.x + edgeLookAhead),
+            bounds.min.y + 0.05f
+        );
+
+        if (!Physics2D.Raycast(ledgeProbe, Vector2.down, ledgeCheckDepth, groundLayer))
+            return false;
+
+        // Wall: is something solid right in front of the body?
+        Vector2 wallProbe = new Vector2(bounds.center.x, bounds.center.y);
+
+        if (Physics2D.Raycast(wallProbe, new Vector2(sign, 0f), bounds.extents.x + edgeLookAhead, groundLayer))
+            return false;
+
+        return true;
+    }
+
+    // =========================
     // GETTERS
     // =========================
 
     public float GetMoveDirection()
     {
         return moveDirection;
+    }
+
+    // Bottom-centre of the enemy's body (see EnemyTargeting.GetTargetFeetPosition).
+    public Vector2 GetFeetPosition()
+    {
+        if (body == null)
+            return transform.position;
+
+        Bounds bounds = body.bounds;
+        return new Vector2(bounds.center.x, bounds.min.y);
     }
 
     public float GetFacingDirection()

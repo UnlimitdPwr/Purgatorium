@@ -7,6 +7,14 @@ public class EnemyAttack : MonoBehaviour
 
     private float attackTimer;
 
+    // How long one swing lasts — read from the Attack1 clip so it stays in
+    // sync if the animation changes.
+    private float swingDuration;
+    private float swingTimer;
+
+    private const string AttackClipName = "Attack1";
+    private const float FallbackSwingDuration = 0.6f;
+
     private EnemyAnimation anim;
     private EnemyMovement movement;
     private EnemyHitbox hitbox;
@@ -19,6 +27,11 @@ public class EnemyAttack : MonoBehaviour
 
         if (hitbox == null)
             Debug.LogError("EnemyAttack: no EnemyHitbox found in children.", this);
+
+        swingDuration = anim != null ? anim.GetClipLength(AttackClipName) : 0f;
+
+        if (swingDuration <= 0f)
+            swingDuration = FallbackSwingDuration;
     }
 
     void Update()
@@ -27,18 +40,33 @@ public class EnemyAttack : MonoBehaviour
         {
             attackTimer -= Time.deltaTime;
         }
+
+        if (swingTimer > 0f)
+        {
+            swingTimer -= Time.deltaTime;
+        }
     }
 
-    public void Attack()
+    // True from the moment a swing starts until its animation has finished.
+    // EnemyController holds the enemy in place while this is true.
+    public bool IsAttacking => swingTimer > 0f;
+
+    public bool CanAttack => attackTimer <= 0f;
+
+    // Starts a swing if the cooldown allows it. Returns true if it did.
+    public bool Attack()
     {
         if (attackTimer > 0f)
-            return;
+            return false;
 
         Debug.Log("Enemy attacks for " + damage + " damage!");
 
         anim.PlayAttack();
 
         attackTimer = attackCooldown;
+        swingTimer = swingDuration;
+
+        return true;
     }
 
     // =========================

@@ -8,9 +8,6 @@ using UnityEngine.SceneManagement;
 // checks what's already there, so it's safe to re-run.
 public static class LevelSystemsSetup
 {
-    const string SecondEnemyName = "Enemy 2";
-    const float SecondEnemyOffsetX = 12f;
-
     [MenuItem("Tools/Level Setup/Wire Enemy Systems Into Open Scene")]
     public static void WireOpenScene()
     {
@@ -27,7 +24,6 @@ public static class LevelSystemsSetup
         bool changed = false;
 
         changed |= AddPatrolToEnemies();
-        changed |= AddSecondTestEnemy();
 
         if (!changed)
         {
@@ -60,25 +56,5 @@ public static class LevelSystemsSetup
         }
 
         return changed;
-    }
-
-    // A copy of the scene's only enemy further along the ground, so patrols,
-    // fights with more than one enemy, and respawning can be tested.
-    static bool AddSecondTestEnemy()
-    {
-        EnemyController[] enemies = Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Include);
-
-        if (enemies.Length != 1 || GameObject.Find(SecondEnemyName) != null)
-            return false;
-
-        GameObject original = enemies[0].gameObject;
-        Vector3 position = original.transform.position + new Vector3(SecondEnemyOffsetX, 0f, 0f);
-
-        GameObject copy = Object.Instantiate(original, position, original.transform.rotation, original.transform.parent);
-        copy.name = SecondEnemyName;
-        Undo.RegisterCreatedObjectUndo(copy, "Add " + SecondEnemyName);
-
-        Debug.Log("LevelSystemsSetup: added '" + SecondEnemyName + "' at x = " + position.x, copy);
-        return true;
     }
 }

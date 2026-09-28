@@ -68,23 +68,33 @@ public class WorldItem : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // This detects when the player enters the pickup range.
+        // This detects when something enters the item's pickup trigger.
+        Debug.Log("WorldItem detected collider: " + other.name);
+
         InventorySystem inventory =
             other.GetComponent<InventorySystem>();
 
         if (inventory == null)
+        {
+            Debug.Log("Collider does not have InventorySystem.");
             return;
+        }
 
         PlayerInput input =
             other.GetComponent<PlayerInput>();
 
         if (input == null)
+        {
+            Debug.Log("Collider does not have PlayerInput.");
             return;
+        }
 
         playerInventory = inventory;
         playerInput = input;
 
         playerInRange = true;
+
+        Debug.Log("Player is now in pickup range.");
 
         SetPickupPrompt(true);
     }
@@ -112,8 +122,24 @@ public class WorldItem : MonoBehaviour
     // This function attempts to transfer the world item into the player's inventory.
     private void TryPickup()
     {
+        Debug.Log("E was detected by WorldItem.");
+
         if (playerInventory == null)
+        {
+            Debug.LogWarning("Pickup failed: playerInventory is null.");
             return;
+        }
+
+        if (itemData == null)
+        {
+            Debug.LogWarning("Pickup failed: itemData is null.");
+            return;
+        }
+
+        Debug.Log(
+            "Attempting to pick up: " +
+            itemData.itemName
+        );
 
         bool added =
             playerInventory.AddItem(
@@ -121,7 +147,9 @@ public class WorldItem : MonoBehaviour
                 amount
             );
 
-        // The world item is removed only if the inventory successfully accepted it.
+        Debug.Log("Inventory AddItem result: " + added);
+
+        // This removes the world item if the inventory accepted it.
         if (added)
         {
             Destroy(gameObject);

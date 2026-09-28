@@ -22,13 +22,17 @@ public class PlayerInput : MonoBehaviour
 
         if (keyboard == null)
         {
-            // No keyboard connected this frame — report neutral input.
+            // This resets all input when no keyboard is available.
             MoveInput = 0f;
             JumpPressed = false;
             ParryPressed = false;
             DashPressed = false;
             DashHeld = false;
+            BlockHeld = false;
             PlaceBonfirePressed = false;
+            PickupPressed = false;
+            InventoryPressed = false;
+
             return;
         }
 

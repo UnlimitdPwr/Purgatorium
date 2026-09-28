@@ -22,6 +22,28 @@ public class InventorySlotUI : MonoBehaviour
     // This function updates the visual appearance of the slot.
     public void UpdateSlot(InventorySlot slot)
     {
+        // This checks whether the required UI references have been assigned.
+        if (itemIcon == null)
+        {
+            Debug.LogError(
+                "InventorySlotUI is missing its Item Icon reference.",
+                this
+            );
+
+            return;
+        }
+
+        if (amountText == null)
+        {
+            Debug.LogError(
+                "InventorySlotUI is missing its Amount Text reference.",
+                this
+            );
+
+            return;
+        }
+
+        // This hides the item visuals when the inventory slot is empty.
         if (slot == null || slot.IsEmpty())
         {
             itemIcon.enabled = false;
@@ -30,6 +52,7 @@ public class InventorySlotUI : MonoBehaviour
             return;
         }
 
+        // This displays the item icon and stack amount.
         itemIcon.enabled = true;
         amountText.enabled = true;
 

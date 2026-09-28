@@ -112,7 +112,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -9.3039, y: 0.52422}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6121253292040644802
@@ -165,8 +165,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15ca242d16e88dc4dadfb6d43f4c60a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventorySlotUI
-  itemIcon: {fileID: 0}
-  amountText: {fileID: 0}
+  itemIcon: {fileID: 2132761722389733831}
+  amountText: {fileID: 8218779213220178086}
   selectionHighlight: {fileID: 0}
 --- !u!1 &6815914420166358081
 GameObject:

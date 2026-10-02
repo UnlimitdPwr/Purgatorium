@@ -31,15 +31,25 @@ public class PlayerKnockback : MonoBehaviour
     [Tooltip("Seconds the player is stunned after a hit. Only used if Stun Enabled is on.")]
     [SerializeField] private float stunDuration = 0.4f;
 
+    [Header("Enemy Contact")]
+    [Tooltip("Knock the player back (no damage) when they bump into an enemy's body.")]
+    [SerializeField] private bool knockbackOnEnemyContact = true;
+
+    [Tooltip("Seconds after a knockback ends before touching an enemy can knock the " +
+             "player back again — stops a pinned player being stun-locked.")]
+    [SerializeField] private float contactCooldown = 0.5f;
+
     // =========================
     // STATE
     // =========================
 
     private Rigidbody2D rb;
     private DashScript dash;
+    private PlayerDeath death;
     private float defaultDrag;
     private float knockbackTimer;
     private float stunTimer;
+    private float contactCooldownTimer;
 
     // True while the push is playing out. MovementScript checks this to stand
     // down and stop overwriting the impulse.
@@ -61,6 +71,7 @@ public class PlayerKnockback : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         dash = GetComponent<DashScript>();
+        death = GetComponent<PlayerDeath>();
         defaultDrag = rb.linearDamping;
     }
 
@@ -72,6 +83,9 @@ public class PlayerKnockback : MonoBehaviour
     {
         if (stunTimer > 0f)
             stunTimer = Mathf.Max(0f, stunTimer - Time.fixedDeltaTime);
+
+        if (contactCooldownTimer > 0f)
+            contactCooldownTimer = Mathf.Max(0f, contactCooldownTimer - Time.fixedDeltaTime);
 
         if (knockbackTimer <= 0f)
             return;
@@ -115,6 +129,41 @@ public class PlayerKnockback : MonoBehaviour
         if (stunEnabled)
             stunTimer = stunDuration;
 
+        contactCooldownTimer = knockbackDuration + contactCooldown;
+
         OnKnockbackStarted?.Invoke();
+    }
+
+    // =========================
+    // ENEMY CONTACT
+    // =========================
+
+    // Stay as well as Enter, so a player who keeps walking into an enemy after
+    // the cooldown gets pushed off again.
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        TryContactKnockback(collision);
+    }
+
+    void OnCollisionStay2D(Collision2D collision)
+    {
+        TryContactKnockback(collision);
+    }
+
+    private void TryContactKnockback(Collision2D collision)
+    {
+        if (!knockbackOnEnemyContact || contactCooldownTimer > 0f)
+            return;
+
+        if (death != null && death.IsDead)
+            return;
+
+        // Dead enemies switch their colliders off, so any enemy we touch is alive.
+        EnemyController enemy = collision.collider.GetComponentInParent<EnemyController>();
+
+        if (enemy == null)
+            return;
+
+        ApplyKnockback(enemy.transform.position);
     }
 }

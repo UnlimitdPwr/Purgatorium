@@ -96,11 +96,10 @@ public class PlayerAnimation : MonoBehaviour
     // BLOCK ANIMATION
     // =========================
 
+    // This function plays the one-shot animation when the player successfully blocks a hit.
     public void PlayBlockHitAnimation()
     {
-        Debug.Log("PLAYING BLOCK HIT ANIMATION");
-
-        animator.Play("HeroKnight_BlockNoEffect", 0, 0f);
+        animator.SetTrigger("BlockHit");
     }
 
 

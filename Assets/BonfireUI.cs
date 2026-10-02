@@ -1,54 +1,127 @@
 using UnityEngine;
+using System.Collections;
 
 public class BonfireUI : MonoBehaviour
 {
+    [Header("UI")]
     [SerializeField] private GameObject bonfireUI;
-
     [SerializeField] private GameObject playerHUD;
+
+    [Header("Canvas Groups")]
+    [SerializeField] private CanvasGroup bonfireCanvasGroup;
+    [SerializeField] private CanvasGroup playerHUDCanvasGroup;
+
+    [Header("Enter Transition")]
+    [SerializeField] private float transitionDuration = 0.6f;
 
     private PlayerController1 playerController;
     private Bonfire currentBonfire;
 
+    private Coroutine transitionCoroutine;
+
     private void Awake()
     {
-        bonfireUI.SetActive(false);
+        // This function sets the initial UI state when the game starts.
+        // The GameObjects stay active so the transition coroutine can run.
+
+        bonfireUI.SetActive(true);
         playerHUD.SetActive(true);
+
+        bonfireCanvasGroup.alpha = 0f;
+        bonfireCanvasGroup.interactable = false;
+        bonfireCanvasGroup.blocksRaycasts = false;
+
+        playerHUDCanvasGroup.alpha = 1f;
+        playerHUDCanvasGroup.interactable = true;
+        playerHUDCanvasGroup.blocksRaycasts = true;
     }
 
     public void Open(GameObject player, Bonfire bonfire)
     {
-        // This function opens the Bonfire UI when the player starts resting.
-        playerController =
-            player.GetComponent<PlayerController1>();
+        // This function starts the transition into the bonfire resting state.
 
+        playerController = player.GetComponent<PlayerController1>();
         currentBonfire = bonfire;
 
-        // Hide the normal player HUD while resting.
-        playerHUD.SetActive(false);
+        if (transitionCoroutine != null)
+        {
+            StopCoroutine(transitionCoroutine);
+        }
 
-        // Show the Bonfire UI.
-        bonfireUI.SetActive(true);
+        transitionCoroutine = StartCoroutine(EnterBonfireTransition());
+    }
+
+    private IEnumerator EnterBonfireTransition()
+    {
+        // This function fades the Player HUD out while the Bonfire UI fades in.
+
+        float startHUDAlpha = playerHUDCanvasGroup.alpha;
+        float startBonfireAlpha = bonfireCanvasGroup.alpha;
+
+        float elapsed = 0f;
+
+        while (elapsed < transitionDuration)
+        {
+            elapsed += Time.deltaTime;
+
+            float progress = elapsed / transitionDuration;
+
+            playerHUDCanvasGroup.alpha = Mathf.Lerp(
+                startHUDAlpha,
+                0f,
+                progress
+            );
+
+            bonfireCanvasGroup.alpha = Mathf.Lerp(
+                startBonfireAlpha,
+                1f,
+                progress
+            );
+
+            yield return null;
+        }
+
+        playerHUDCanvasGroup.alpha = 0f;
+        bonfireCanvasGroup.alpha = 1f;
+
+        playerHUDCanvasGroup.interactable = false;
+        playerHUDCanvasGroup.blocksRaycasts = false;
+
+        bonfireCanvasGroup.interactable = true;
+        bonfireCanvasGroup.blocksRaycasts = true;
+
+        transitionCoroutine = null;
     }
 
     public void Close()
     {
-        // This function closes the Bonfire UI.
-        bonfireUI.SetActive(false);
+        // This function immediately hides the Bonfire UI.
+
+        bonfireCanvasGroup.alpha = 0f;
+        bonfireCanvasGroup.interactable = false;
+        bonfireCanvasGroup.blocksRaycasts = false;
     }
 
     public void Leave()
     {
-        // This function exits the bonfire resting state.
+        // This function immediately exits the bonfire resting state.
+
         if (playerController == null)
             return;
 
         playerController.SetResting(false);
 
-        // Close the Bonfire UI.
-        Close();
+        // Immediately hide the Bonfire UI.
+        bonfireCanvasGroup.alpha = 0f;
+        bonfireCanvasGroup.interactable = false;
+        bonfireCanvasGroup.blocksRaycasts = false;
 
-        // Show the normal player HUD again.
-        playerHUD.SetActive(true);
+        // Immediately show the Player HUD.
+        playerHUDCanvasGroup.alpha = 1f;
+        playerHUDCanvasGroup.interactable = true;
+        playerHUDCanvasGroup.blocksRaycasts = true;
+
+        transitionCoroutine = null;
 
         Debug.Log("Player left the bonfire.");
     }

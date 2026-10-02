@@ -1176,6 +1176,7 @@ GameObject:
   - component: {fileID: 747019941}
   - component: {fileID: 747019940}
   - component: {fileID: 747019939}
+  - component: {fileID: 747019942}
   m_Layer: 5
   m_Name: BonfireUI
   m_TagString: Untagged
@@ -1217,6 +1218,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   bonfireUI: {fileID: 747019937}
   playerHUD: {fileID: 1774931489}
+  bonfireCanvasGroup: {fileID: 747019942}
+  playerHUDCanvasGroup: {fileID: 1774931491}
+  transitionDuration: 0.6
 --- !u!114 &747019940
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1255,6 +1259,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 747019937}
   m_CullTransparentMesh: 1
+--- !u!225 &747019942
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 747019937}
+  m_Enabled: 1
+  m_Alpha: 0
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &776598663
 GameObject:
   m_ObjectHideFlags: 0
@@ -3678,6 +3694,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1774931490}
+  - component: {fileID: 1774931491}
   m_Layer: 5
   m_Name: PlayerHUD
   m_TagString: Untagged
@@ -3706,6 +3723,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!225 &1774931491
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1774931489}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &1781525075
 GameObject:
   m_ObjectHideFlags: 0

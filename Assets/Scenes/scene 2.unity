@@ -405,6 +405,7 @@ GameObject:
   - component: {fileID: 537789727}
   - component: {fileID: 537789726}
   - component: {fileID: 537789725}
+  - component: {fileID: 537789741}
   m_Layer: 9
   m_Name: Player
   m_TagString: Player
@@ -461,10 +462,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5a14c315e68f46448c3b937c0976b42, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStamina
-  maxStamina: 100
+  maxStamina: 50
   dashCost: 15
   sprintDrainPerSecond: 5
   regenPerSecond: 10
+  exhaustionDuration: 5
   exhaustedSpeedMultiplier: 0.5
 --- !u!114 &537789729
 MonoBehaviour:
@@ -731,6 +733,26 @@ Transform:
   - {fileID: 488647700}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &537789741
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 537789724}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0910268cad748c29dae813c5cd7abef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerKnockback
+  knockbackForce: 8
+  upwardForce: 2
+  knockbackDrag: 5
+  knockbackDuration: 0.4
+  stunEnabled: 1
+  stunDuration: 0.4
+  knockbackOnEnemyContact: 1
+  contactCooldown: 0.5
 --- !u!1 &727765517
 GameObject:
   m_ObjectHideFlags: 0
@@ -1524,8 +1546,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6774e650a298b294abdff8bad4468eea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  attackRange: 1.2
-  attackHeightTolerance: 1
+  reachMargin: 0.25
+  fallbackAttackRange: 1.1
   leashDistance: 10
   logStateChanges: 0
 --- !u!70 &1902844970

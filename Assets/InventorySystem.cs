@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class InventorySystem : MonoBehaviour
 {
@@ -11,6 +12,8 @@ public class InventorySystem : MonoBehaviour
     private List<InventorySlot> slots = new List<InventorySlot>();
 
     public IReadOnlyList<InventorySlot> Slots => slots;
+
+    public event Action OnInventoryChanged;
 
     private void Awake()
     {
@@ -92,5 +95,72 @@ public class InventorySystem : MonoBehaviour
             return null;
 
         return slots[index];
+    }
+
+    // This function checks how many of a specific item the player currently has.
+    public int GetItemAmount(ItemData item)
+    {
+        if (item == null)
+            return 0;
+
+        int totalAmount = 0;
+
+        for (int i = 0; i < slots.Count; i++)
+        {
+            if (!slots[i].IsEmpty() &&
+                slots[i].item == item)
+            {
+                totalAmount += slots[i].amount;
+            }
+        }
+
+        return totalAmount;
+    }
+
+    // This function checks whether the player has at least one of the specified item.
+    public bool HasItem(ItemData item)
+    {
+        return GetItemAmount(item) > 0;
+    }
+
+    // This function removes a specified amount of an item from the inventory.
+    public bool RemoveItem(ItemData item, int amount = 1)
+    {
+        if (item == null || amount <= 0)
+            return false;
+
+        if (GetItemAmount(item) < amount)
+            return false;
+
+        int remaining = amount;
+
+        // Remove items starting from the first matching slot.
+        for (int i = 0; i < slots.Count; i++)
+        {
+            if (slots[i].IsEmpty() ||
+                slots[i].item != item)
+            {
+                continue;
+            }
+
+            int amountToRemove =
+                Mathf.Min(slots[i].amount, remaining);
+
+            slots[i].amount -= amountToRemove;
+            remaining -= amountToRemove;
+
+            if (slots[i].amount <= 0)
+            {
+                slots[i].Clear();
+            }
+
+            if (remaining <= 0)
+                break;
+        }
+
+        // Tell the inventory UI that the inventory contents changed.
+        OnInventoryChanged?.Invoke();
+
+        return true;
     }
 }

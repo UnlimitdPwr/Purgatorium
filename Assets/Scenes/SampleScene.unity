@@ -293,7 +293,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 321696637}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: PrimaryBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -574,7 +574,7 @@ GameObject:
   - component: {fileID: 404785127}
   - component: {fileID: 404785129}
   - component: {fileID: 404785128}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1216,6 +1216,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   bonfireUI: {fileID: 747019937}
+  playerHUD: {fileID: 1774931489}
 --- !u!114 &747019940
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1570,7 +1571,7 @@ GameObject:
   - component: {fileID: 837704719}
   - component: {fileID: 837704721}
   - component: {fileID: 837704720}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1701,7 +1702,7 @@ GameObject:
   - component: {fileID: 952280041}
   - component: {fileID: 952280040}
   - component: {fileID: 952280039}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Enemy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2912,7 +2913,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1378009124}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: GroundCheck
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3195,7 +3196,7 @@ GameObject:
   - component: {fileID: 1533912769}
   - component: {fileID: 1533912771}
   - component: {fileID: 1533912770}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3268,7 +3269,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1548187542}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SecondaryBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3309,20 +3310,16 @@ PrefabInstance:
       value: ItemPickup
       objectReference: {fileID: 0}
     - target: {fileID: 3783453888001981014, guid: 324171aa64c20c44a9ece58a7dbbec45, type: 3}
-      propertyPath: itemData
-      value: 
-      objectReference: {fileID: 11400000, guid: d96924f58bc4d6647b6685946a825ae7, type: 2}
-    - target: {fileID: 3783453888001981014, guid: 324171aa64c20c44a9ece58a7dbbec45, type: 3}
       propertyPath: pickupPrompt
       value: 
       objectReference: {fileID: 1781525075}
     - target: {fileID: 7002444602992906693, guid: 324171aa64c20c44a9ece58a7dbbec45, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -9.83347
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 7002444602992906693, guid: 324171aa64c20c44a9ece58a7dbbec45, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.39633
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7002444602992906693, guid: 324171aa64c20c44a9ece58a7dbbec45, type: 3}
       propertyPath: m_LocalPosition.z
@@ -3601,7 +3598,7 @@ GameObject:
   - component: {fileID: 1756574613}
   - component: {fileID: 1756574615}
   - component: {fileID: 1756574614}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: AttackHitbox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3910,7 +3907,7 @@ GameObject:
   - component: {fileID: 1899440071}
   - component: {fileID: 1899440073}
   - component: {fileID: 1899440072}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4157,7 +4154,7 @@ GameObject:
   - component: {fileID: 1957729620}
   - component: {fileID: 1957729622}
   - component: {fileID: 1957729621}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: EnemyHealthCanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4201,6 +4198,7 @@ MonoBehaviour:
   primaryFill: {fileID: 404785128}
   secondaryFill: {fileID: 837704720}
   fillDuration: 0.15
+  primaryDrains: 1
 --- !u!223 &1957729622
 Canvas:
   m_ObjectHideFlags: 0
@@ -4522,6 +4520,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   moveSpeed: 5
   jumpForce: 10
+  jumpCutMultiplier: 0.5
   groundCheck: {fileID: 624875463}
   groundCheckRadius: 0.1
   groundLayer:
@@ -4702,6 +4701,8 @@ MonoBehaviour:
   bonfireSeedPrefab: {fileID: 799446892114926092, guid: 5ffb701cb88aca047ab32dbd10e24284, type: 3}
   throwPoint: {fileID: 130163575}
   throwForce: 3
+  inventory: {fileID: 2003877432}
+  bonfireSeedItem: {fileID: 11400000, guid: d96924f58bc4d6647b6685946a825ae7, type: 2}
 --- !u!114 &2003877432
 MonoBehaviour:
   m_ObjectHideFlags: 0

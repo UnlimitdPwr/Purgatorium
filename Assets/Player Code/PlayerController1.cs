@@ -8,6 +8,7 @@ public class PlayerController1 : MonoBehaviour
     private DashScript dash;
     private BlockScript block;
     private BonfirePlacement bonfirePlacement;
+    private PlayerKnockback knockback;
 
     private bool isResting;
 
@@ -21,6 +22,7 @@ public class PlayerController1 : MonoBehaviour
         dash = GetComponent<DashScript>();
         block = GetComponent<BlockScript>();
         bonfirePlacement = GetComponent<BonfirePlacement>();
+        knockback = GetComponent<PlayerKnockback>();
     }
 
     void Update()
@@ -31,6 +33,9 @@ public class PlayerController1 : MonoBehaviour
             block.StopBlocking();
             return;
         }
+
+        if (HandleStun())
+            return;
 
         HandleMovement();
         HandleJump();
@@ -47,6 +52,27 @@ public class PlayerController1 : MonoBehaviour
     public void SetResting(bool resting)
     {
         isResting = resting;
+    }
+
+    // =========================
+    // STUN
+    // =========================
+
+    // Returns true while stunned by a hit — all input is locked until it wears off.
+    bool HandleStun()
+    {
+        if (knockback == null || !knockback.IsStunned)
+            return false;
+
+        movement.SetMoveInput(0f);
+
+        if (dash != null)
+            dash.SetDashHeld(false);
+
+        if (block != null)
+            block.StopBlocking();
+
+        return true;
     }
 
     // =========================

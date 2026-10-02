@@ -22,6 +22,7 @@ public class MovementScript : MonoBehaviour
     private Rigidbody2D rb;
     private DashScript dash;
     private PlayerStamina stamina;
+    private PlayerKnockback knockback;
     private float moveInput;
 
     void Awake()
@@ -29,6 +30,7 @@ public class MovementScript : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         dash = GetComponent<DashScript>();
         stamina = GetComponent<PlayerStamina>();
+        knockback = GetComponent<PlayerKnockback>();
     }
 
     public void SetMoveInput(float input)
@@ -51,6 +53,10 @@ public class MovementScript : MonoBehaviour
     {
         // Dash owns the Rigidbody while it's active — don't overwrite the burst.
         if (dash != null && dash.IsDashing)
+            return;
+
+        // Let a knockback impulse play out instead of overwriting it.
+        if (knockback != null && knockback.IsKnockedBack)
             return;
 
         float speedMultiplier = 1f;

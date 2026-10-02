@@ -69,6 +69,30 @@ public class EnemyAttack : MonoBehaviour
         return true;
     }
 
+    // True when a body with these bounds would be at least `margin` inside
+    // the slash for an enemy facing `direction`. Used to decide when to swing,
+    // so the swing always reaches whatever it was aimed at.
+    public bool IsInReach(Bounds target, float direction, float margin)
+    {
+        if (hitbox == null)
+            return false;
+
+        Bounds reach = hitbox.GetReachBounds(direction);
+
+        // How far the slash's leading edge reaches past the target's near side.
+        float depth = direction >= 0f
+            ? reach.max.x - target.min.x
+            : target.max.x - reach.min.x;
+
+        bool notBehind = direction >= 0f
+            ? target.max.x > reach.min.x
+            : target.min.x < reach.max.x;
+
+        bool verticalOverlap = target.max.y > reach.min.y && target.min.y < reach.max.y;
+
+        return depth >= margin && notBehind && verticalOverlap;
+    }
+
     // =========================
     // ANIMATION EVENT HOOKS
     // =========================

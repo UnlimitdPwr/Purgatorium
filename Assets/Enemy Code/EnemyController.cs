@@ -17,11 +17,12 @@ public enum EnemyState
 public class EnemyController : MonoBehaviour
 {
     [Header("Attack")]
-    [Tooltip("Horizontal distance to the player at which the enemy stops and swings.")]
-    public float attackRange = 1.2f;
+    [Tooltip("How far inside the slash the player's body must be before the enemy swings. " +
+             "Higher = the enemy steps in closer, so a player who steps back a little still gets hit.")]
+    public float reachMargin = 0.25f;
 
-    [Tooltip("How far above/below the enemy the player can be and still be attacked.")]
-    public float attackHeightTolerance = 1f;
+    [Tooltip("Only used if the player has no collider: horizontal distance at which the enemy swings.")]
+    public float fallbackAttackRange = 1.1f;
 
     [Header("Chase")]
     [Tooltip("How far from home the enemy will chase before giving up and returning.")]
@@ -244,15 +245,25 @@ public class EnemyController : MonoBehaviour
         return true;
     }
 
+    // Asks the attack whether its slash would actually land, facing the
+    // target. Measuring from the hitbox (rather than a distance between body
+    // centres) keeps both sides identical — the body colliders are offset
+    // from the pivots and don't flip with the sprite.
     bool IsTargetInAttackRange()
     {
         if (!targeting.HasTarget())
             return false;
 
-        Vector2 delta = targeting.GetTargetFeetPosition() - movement.GetFeetPosition();
+        float direction = targeting.GetHorizontalDirectionToTarget();
 
-        return Mathf.Abs(delta.x) <= attackRange
-            && Mathf.Abs(delta.y) <= attackHeightTolerance;
+        if (direction == 0f)
+            direction = movement.GetFacingDirection();
+
+        if (targeting.TryGetTargetBounds(out Bounds targetBounds))
+            return attack.IsInReach(targetBounds, direction, reachMargin);
+
+        Vector2 delta = targeting.GetTargetFeetPosition() - movement.GetFeetPosition();
+        return Mathf.Abs(delta.x) <= fallbackAttackRange && Mathf.Abs(delta.y) <= 1f;
     }
 
     bool IsTooFarFromHome()

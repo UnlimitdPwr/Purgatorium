@@ -30,6 +30,40 @@ public class EnemyHitbox : MonoBehaviour
     }
 
     // =========================
+    // REACH
+    // =========================
+
+    // World-space box the hitbox covers when the enemy faces this way —
+    // computed from the layout, so it works while the hitbox is switched off
+    // (a disabled collider reports empty bounds).
+    public Bounds GetReachBounds(float direction)
+    {
+        float sign = direction < 0f ? -1f : 1f;
+
+        Vector3 localPosition = transform.localPosition;
+        localPosition.x = designLocalX * sign;
+
+        Vector3 pivot = transform.parent != null
+            ? transform.parent.TransformPoint(localPosition)
+            : localPosition;
+
+        Vector3 scale = transform.lossyScale;
+        Vector2 offset = new Vector2(designOffsetX * sign, hitbox != null ? hitbox.offset.y : 0f);
+
+        Vector2 size = Vector2.zero;
+
+        if (hitbox is CapsuleCollider2D capsule)
+            size = capsule.size;
+        else if (hitbox is BoxCollider2D box)
+            size = box.size;
+
+        Vector3 center = pivot + new Vector3(offset.x * scale.x, offset.y * scale.y, 0f);
+        Vector3 worldSize = new Vector3(Mathf.Abs(size.x * scale.x), Mathf.Abs(size.y * scale.y), 0.1f);
+
+        return new Bounds(center, worldSize);
+    }
+
+    // =========================
     // FACING
     // =========================
 

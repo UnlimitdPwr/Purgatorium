@@ -20,6 +20,19 @@ public class EnemyTargeting : MonoBehaviour
         currentTargetCollider = null;
     }
 
+    // The target's body, if it has an active collider.
+    public bool TryGetTargetBounds(out Bounds bounds)
+    {
+        if (currentTargetCollider != null && currentTargetCollider.enabled)
+        {
+            bounds = currentTargetCollider.bounds;
+            return true;
+        }
+
+        bounds = default;
+        return false;
+    }
+
     // Bottom-centre of the target's body. Transform pivots differ between the
     // player and enemy sprites, so compare feet rather than positions.
     public Vector2 GetTargetFeetPosition()

@@ -158,6 +158,18 @@ public class EnemyHitbox : MonoBehaviour
 
         playerHealth.TakeDamage(damage);
 
+        // Push the player away from the enemy's body (not the hitbox, which
+        // can sit past the player's center when they're overlapping).
+        PlayerKnockback playerKnockback = other.GetComponentInParent<PlayerKnockback>();
+
+        if (playerKnockback != null)
+        {
+            EnemyController enemy = GetComponentInParent<EnemyController>();
+            Vector2 source = enemy != null ? enemy.transform.position : transform.position;
+
+            playerKnockback.ApplyKnockback(source);
+        }
+
         // One damage application per attack.
         canDamage = false;
     }

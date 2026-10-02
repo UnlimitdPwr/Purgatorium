@@ -101,6 +101,17 @@ public class DashScript : MonoBehaviour
         OnDashStarted?.Invoke();
     }
 
+    // Ends a dash burst early without starting a new cooldown — PlayerKnockback
+    // calls this so a hit isn't overwritten by the dash velocity.
+    public void CancelDash()
+    {
+        if (!IsDashing)
+            return;
+
+        dashTimer = 0f;
+        OnDashEnded?.Invoke();
+    }
+
     // Called every frame by PlayerController1 with the current held state of the
     // dash button, so the ground-hold speed multiplier can track it continuously.
     public void SetDashHeld(bool held)

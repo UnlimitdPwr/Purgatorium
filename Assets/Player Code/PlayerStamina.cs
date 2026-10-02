@@ -97,6 +97,18 @@ public class PlayerStamina : MonoBehaviour
     }
 
     // =========================
+    // RESTORE
+    // =========================
+
+    // Called by Bonfire when the player rests: full bar and any exhaustion
+    // penalty cleared.
+    public void RestoreFullStamina()
+    {
+        exhaustionTimer = 0f;
+        SetStamina(maxStamina);
+    }
+
+    // =========================
     // INTERNAL
     // =========================
 

@@ -17,11 +17,16 @@ public class PlayerStamina : MonoBehaviour
     [SerializeField] private float regenPerSecond = 10f;
 
     [Header("Exhaustion")]
-    [Tooltip("Movement speed multiplier applied while stamina is at or below 0.")]
+    [Tooltip("Seconds the exhaustion penalty lasts once stamina hits 0. Stamina keeps " +
+             "regenerating during it; when it ends, dash and sprint unlock again even " +
+             "if the bar isn't full.")]
+    [SerializeField] private float exhaustionDuration = 5f;
+
+    [Tooltip("Movement speed multiplier applied while exhausted.")]
     [SerializeField] private float exhaustedSpeedMultiplier = 0.5f;
 
     private float currentStamina;
-    private bool isExhausted;
+    private float exhaustionTimer;
     private bool isSprinting;
     private DashScript dash;
 
@@ -29,15 +34,15 @@ public class PlayerStamina : MonoBehaviour
     public float MaxStamina => maxStamina;
     public float StaminaPercent => maxStamina > 0f ? currentStamina / maxStamina : 0f;
 
-    // True from the moment stamina hits 0 until it fully regenerates back to max —
-    // dashing and sprinting are both locked out for the whole stretch.
-    public bool IsExhausted => isExhausted;
+    // True for exhaustionDuration seconds after stamina hits 0 — dashing and
+    // sprinting are both locked out and movement is slowed for the whole stretch.
+    public bool IsExhausted => exhaustionTimer > 0f;
 
-    public bool CanDash => !isExhausted;
-    public bool CanSprint => !isExhausted;
+    public bool CanDash => !IsExhausted;
+    public bool CanSprint => !IsExhausted;
 
     // 1 normally, exhaustedSpeedMultiplier while exhausted. MovementScript multiplies this in.
-    public float SpeedMultiplier => isExhausted ? exhaustedSpeedMultiplier : 1f;
+    public float SpeedMultiplier => IsExhausted ? exhaustedSpeedMultiplier : 1f;
 
     public event Action<float, float> OnStaminaChanged;
 
@@ -49,6 +54,9 @@ public class PlayerStamina : MonoBehaviour
 
     private void Update()
     {
+        if (exhaustionTimer > 0f)
+            exhaustionTimer = Mathf.Max(0f, exhaustionTimer - Time.deltaTime);
+
         bool dashing = dash != null && dash.IsDashing;
 
         if (isSprinting)
@@ -99,8 +107,10 @@ public class PlayerStamina : MonoBehaviour
 
         SetStamina(currentStamina - amount);
 
-        if (currentStamina <= 0f)
-            isExhausted = true;
+        // Only starts the timer on the hit to 0 — draining further while already
+        // exhausted doesn't extend it.
+        if (currentStamina <= 0f && !IsExhausted)
+            exhaustionTimer = exhaustionDuration;
     }
 
     private void Regenerate(float amount)
@@ -109,9 +119,6 @@ public class PlayerStamina : MonoBehaviour
             return;
 
         SetStamina(currentStamina + amount);
-
-        if (isExhausted && currentStamina >= maxStamina)
-            isExhausted = false;
     }
 
     private void SetStamina(float value)

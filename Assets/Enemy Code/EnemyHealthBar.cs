@@ -12,6 +12,12 @@ public class EnemyHealthBar : MonoBehaviour
     [Header("Movement")]
     [SerializeField] private float fillDuration = 0.15f;
 
+    [Header("Display")]
+    [Tooltip("Show the primary bar starting full and draining toward empty, instead " +
+             "of starting empty and filling up. Only changes what's drawn — " +
+             "EnemyHealth still counts the primary value up to its threshold.")]
+    [SerializeField] private bool primaryDrains = true;
+
     private Coroutine primaryCoroutine;
     private Coroutine secondaryCoroutine;
 
@@ -23,10 +29,10 @@ public class EnemyHealthBar : MonoBehaviour
         enemyHealth.OnPrimaryChanged += UpdatePrimaryBar;
         enemyHealth.OnSecondaryChanged += UpdateSecondaryBar;
 
-        // Paint the current state immediately — both bars start empty, but this
-        // keeps the bar correct if it's ever enabled mid-fight.
-        UpdatePrimaryBar(enemyHealth.PrimaryValue, enemyHealth.PrimaryThreshold);
-        UpdateSecondaryBar(enemyHealth.SecondaryValue, enemyHealth.SecondaryThreshold);
+        // Snap to the current state immediately (no animation) — the primary bar
+        // starts full, and this keeps both right if enabled mid-fight.
+        primaryFill.fillAmount = PrimaryFillFor(enemyHealth.PrimaryValue, enemyHealth.PrimaryThreshold);
+        secondaryFill.fillAmount = FillFor(enemyHealth.SecondaryValue, enemyHealth.SecondaryThreshold);
     }
 
     private void OnDisable()
@@ -40,7 +46,7 @@ public class EnemyHealthBar : MonoBehaviour
 
     private void UpdatePrimaryBar(float current, float max)
     {
-        float targetFill = max > 0f ? current / max : 0f;
+        float targetFill = PrimaryFillFor(current, max);
 
         if (primaryCoroutine != null)
             StopCoroutine(primaryCoroutine);
@@ -50,12 +56,23 @@ public class EnemyHealthBar : MonoBehaviour
 
     private void UpdateSecondaryBar(float current, float max)
     {
-        float targetFill = max > 0f ? current / max : 0f;
+        float targetFill = FillFor(current, max);
 
         if (secondaryCoroutine != null)
             StopCoroutine(secondaryCoroutine);
 
         secondaryCoroutine = StartCoroutine(MoveFill(secondaryFill, targetFill));
+    }
+
+    private float PrimaryFillFor(float current, float max)
+    {
+        float fill = FillFor(current, max);
+        return primaryDrains ? 1f - fill : fill;
+    }
+
+    private static float FillFor(float current, float max)
+    {
+        return max > 0f ? current / max : 0f;
     }
 
     private IEnumerator MoveFill(Image fill, float targetFill)

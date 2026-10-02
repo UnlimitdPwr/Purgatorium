@@ -92,6 +92,10 @@ public class PlayerController1 : MonoBehaviour
     {
         if (playerInput.JumpPressed)
             movement.Jump();
+
+        // Letting go early makes a shorter jump; holding gives the full height.
+        if (playerInput.JumpReleased)
+            movement.ReleaseJump();
     }
 
     // =========================

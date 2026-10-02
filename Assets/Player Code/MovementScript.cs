@@ -5,6 +5,12 @@ public class MovementScript : MonoBehaviour
     public float moveSpeed = 5f;
     public float jumpForce = 10f;
 
+    [Tooltip("Upward speed is multiplied by this if the jump button is released " +
+             "while still rising. Lower = shorter tap-jumps. Holding the button " +
+             "the whole way always reaches the full jumpForce height.")]
+    [Range(0f, 1f)]
+    public float jumpCutMultiplier = 0.5f;
+
 
     // =========================
     // GROUND CHECK
@@ -24,6 +30,10 @@ public class MovementScript : MonoBehaviour
     private PlayerStamina stamina;
     private PlayerKnockback knockback;
     private float moveInput;
+
+    // True from Jump() until the player stops rising — only our own jump can be
+    // cut short, not a knockback pop.
+    private bool jumpRising;
 
     void Awake()
     {
@@ -47,17 +57,41 @@ public class MovementScript : MonoBehaviour
             rb.linearVelocity.x,
             jumpForce
         );
+
+        jumpRising = true;
+    }
+
+    public void ReleaseJump()
+    {
+        if (!jumpRising)
+            return;
+
+        jumpRising = false;
+
+        if (rb.linearVelocity.y <= 0f)
+            return;
+
+        rb.linearVelocity = new Vector2(
+            rb.linearVelocity.x,
+            rb.linearVelocity.y * jumpCutMultiplier
+        );
     }
 
     void FixedUpdate()
     {
+        if (jumpRising && rb.linearVelocity.y <= 0f)
+            jumpRising = false;
+
         // Dash owns the Rigidbody while it's active — don't overwrite the burst.
         if (dash != null && dash.IsDashing)
             return;
 
         // Let a knockback impulse play out instead of overwriting it.
         if (knockback != null && knockback.IsKnockedBack)
+        {
+            jumpRising = false;
             return;
+        }
 
         float speedMultiplier = 1f;
 

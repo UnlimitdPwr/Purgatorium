@@ -13,7 +13,7 @@ public class PlayerKnockback : MonoBehaviour
     [SerializeField] private float knockbackForce = 8f;
 
     [Tooltip("Extra upward impulse so the player pops off the ground a little.")]
-    [SerializeField] private float upwardForce = 2f;
+    [SerializeField] private float upwardForce = 6f;
 
     [Header("Recovery")]
     [Tooltip("Linear damping applied while knocked back so the player slides to a stop.")]
@@ -32,8 +32,12 @@ public class PlayerKnockback : MonoBehaviour
     [SerializeField] private float stunDuration = 0.4f;
 
     [Header("Enemy Contact")]
-    [Tooltip("Knock the player back (no damage) when they bump into an enemy's body.")]
+    [Tooltip("Knock the player back when they bump into an enemy's body.")]
     [SerializeField] private bool knockbackOnEnemyContact = true;
+
+    [Tooltip("Also deal that enemy's attack damage on contact. Blocking reduces it " +
+             "the same way it reduces a real attack.")]
+    [SerializeField] private bool damageOnEnemyContact = true;
 
     [Tooltip("Seconds after a knockback ends before touching an enemy can knock the " +
              "player back again — stops a pinned player being stun-locked.")]
@@ -46,6 +50,7 @@ public class PlayerKnockback : MonoBehaviour
     private Rigidbody2D rb;
     private DashScript dash;
     private PlayerDeath death;
+    private PlayerHealth health;
     private float defaultDrag;
     private float knockbackTimer;
     private float stunTimer;
@@ -72,6 +77,7 @@ public class PlayerKnockback : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         dash = GetComponent<DashScript>();
         death = GetComponent<PlayerDeath>();
+        health = GetComponent<PlayerHealth>();
         defaultDrag = rb.linearDamping;
     }
 
@@ -163,6 +169,14 @@ public class PlayerKnockback : MonoBehaviour
 
         if (enemy == null)
             return;
+
+        if (damageOnEnemyContact && health != null)
+        {
+            EnemyAttack attack = enemy.GetComponent<EnemyAttack>();
+
+            if (attack != null)
+                health.TakeDamage(attack.damage);
+        }
 
         ApplyKnockback(enemy.transform.position);
     }

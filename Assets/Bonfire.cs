@@ -13,7 +13,7 @@ public class Bonfire : MonoBehaviour, IInteractable
         Rest(interactor);
     }
 
-    // This function restores the player, sets this bonfire as the checkpoint,
+    // This function restores the player's health and stamina, sets this bonfire as the checkpoint,
     // locks the player and opens the bonfire UI.
     private void Rest(GameObject interactor)
     {
@@ -23,6 +23,14 @@ public class Bonfire : MonoBehaviour, IInteractable
         if (playerHealth != null)
         {
             playerHealth.RestoreFullHealth();
+        }
+
+        PlayerStamina playerStamina =
+            interactor.GetComponent<PlayerStamina>();
+
+        if (playerStamina != null)
+        {
+            playerStamina.RestoreFullStamina();
         }
 
         // This bonfire becomes the current checkpoint.

@@ -9,26 +9,36 @@ using UnityEngine.SceneManagement;
 // Scene2 is only read, never changed. Delete this tool once it has been used.
 public static class EnemyTransferTool
 {
-    const string SourceSceneName = "Scene2";
-    const string TargetSceneName = "SampleScene";
+    // The scenes are found by GUID (from their .meta files), so renaming or
+    // moving them doesn't break the tool.
+    const string SourceSceneGuid = "b409d20b7acadcc4bbc3dc8d70f9985e"; // Scene2
+    const string TargetSceneGuid = "8c9cfa26abfee488c85f1582747f6a02"; // SampleScene
+
+    const string DialogTitle = "Enemy Transfer";
 
     [MenuItem("Tools/Enemy Transfer/Copy Scene2 Enemy Into SampleScene")]
     public static void CopyScene2EnemyIntoSampleScene()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode)
         {
-            EditorUtility.DisplayDialog(
-                "Enemy Transfer",
-                "Stop Play Mode first — changes made during Play Mode are thrown away when it ends.",
-                "OK");
+            EditorUtility.DisplayDialog(DialogTitle,
+                "Stop Play Mode first — changes made during Play Mode are thrown away when it ends.", "OK");
             return;
         }
 
-        bool confirmed = EditorUtility.DisplayDialog(
-            "Enemy Transfer",
-            "Replace the enemy in " + TargetSceneName + " with a copy of the enemy from " + SourceSceneName +
-            "?\n\nThe copy is placed where " + TargetSceneName + "'s current enemy stands, and " +
-            TargetSceneName + " is saved. " + SourceSceneName + " is not changed.",
+        if (!TryFindScenes(out string sourcePath, out string targetPath, out string error))
+        {
+            EditorUtility.DisplayDialog(DialogTitle, error, "OK");
+            return;
+        }
+
+        string sourceName = System.IO.Path.GetFileNameWithoutExtension(sourcePath);
+        string targetName = System.IO.Path.GetFileNameWithoutExtension(targetPath);
+
+        bool confirmed = EditorUtility.DisplayDialog(DialogTitle,
+            "Replace the enemy in '" + targetName + "' with a copy of the enemy from '" + sourceName +
+            "'?\n\nThe copy is placed where the current enemy stands, and '" + targetName +
+            "' is saved. '" + sourceName + "' is not changed.",
             "Replace", "Cancel");
 
         if (!confirmed)
@@ -37,36 +47,33 @@ public static class EnemyTransferTool
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             return;
 
-        Transfer();
+        string message = Transfer();
+
+        EditorUtility.DisplayDialog(DialogTitle, message, "OK");
     }
 
-    // Does the work without the dialogs. Returns true on success.
-    public static bool Transfer()
+    // Does the work without the dialogs. Returns a message saying what
+    // happened; it starts with "Done" on success.
+    public static string Transfer()
     {
-        string sourcePath = FindScenePath(SourceSceneName);
-        string targetPath = FindScenePath(TargetSceneName);
-
-        if (sourcePath == null || targetPath == null)
-        {
-            Debug.LogWarning("EnemyTransferTool: couldn't find " + SourceSceneName + " and " + TargetSceneName + ".");
-            return false;
-        }
+        if (!TryFindScenes(out string sourcePath, out string targetPath, out string error))
+            return Fail(error);
 
         Scene target = EditorSceneManager.OpenScene(targetPath, OpenSceneMode.Single);
         Scene source = EditorSceneManager.OpenScene(sourcePath, OpenSceneMode.Additive);
 
-        GameObject sourceEnemy = FindOnlyEnemy(source);
-        GameObject oldEnemy = FindOnlyEnemy(target);
+        GameObject sourceEnemy = FindOnlyEnemy(source, out error);
+        GameObject oldEnemy = sourceEnemy != null ? FindOnlyEnemy(target, out error) : null;
 
         if (sourceEnemy == null || oldEnemy == null)
         {
             EditorSceneManager.CloseScene(source, true);
-            return false;
+            return Fail(error);
         }
 
         GameObject copy = Object.Instantiate(sourceEnemy);
         SceneManager.MoveGameObjectToScene(copy, target);
-        Undo.RegisterCreatedObjectUndo(copy, "Copy " + SourceSceneName + " enemy");
+        Undo.RegisterCreatedObjectUndo(copy, "Copy " + source.name + " enemy");
 
         // Take over the old enemy's name, place in the hierarchy and position.
         copy.name = oldEnemy.name;
@@ -76,21 +83,42 @@ public static class EnemyTransferTool
 
         Undo.DestroyObjectImmediate(oldEnemy);
 
+        string sourceName = source.name;
         EditorSceneManager.CloseScene(source, true);
         SceneManager.SetActiveScene(target);
 
         EditorSceneManager.MarkSceneDirty(target);
-        EditorSceneManager.SaveScene(target);
 
-        Debug.Log("EnemyTransferTool: replaced " + TargetSceneName + "'s enemy with the " +
-                  SourceSceneName + " enemy — " + TargetSceneName + " saved.", copy);
-        return true;
+        if (!EditorSceneManager.SaveScene(target))
+            return Fail("Copied the enemy, but saving '" + target.name + "' failed — save it manually (Ctrl/Cmd+S).");
+
+        string message = "Done — '" + target.name + "' now has the enemy from '" + sourceName +
+                         "' and has been saved. Commit " + target.path + ".";
+        Debug.Log("EnemyTransferTool: " + message, copy);
+        return message;
     }
 
-    // The scene's single root enemy. Refuses to guess when there are several.
-    static GameObject FindOnlyEnemy(Scene scene)
+    static bool TryFindScenes(out string sourcePath, out string targetPath, out string error)
+    {
+        sourcePath = AssetDatabase.GUIDToAssetPath(SourceSceneGuid);
+        targetPath = AssetDatabase.GUIDToAssetPath(TargetSceneGuid);
+        error = null;
+
+        if (string.IsNullOrEmpty(sourcePath) || AssetDatabase.LoadAssetAtPath<SceneAsset>(sourcePath) == null)
+            error = "Couldn't find the source scene (Scene2). It may have been deleted, or its .meta file replaced " +
+                    "(which gives it a new ID). Restore it from git and try again.";
+        else if (string.IsNullOrEmpty(targetPath) || AssetDatabase.LoadAssetAtPath<SceneAsset>(targetPath) == null)
+            error = "Couldn't find the target scene (SampleScene). It may have been deleted, or its .meta file replaced " +
+                    "(which gives it a new ID). Restore it from git and try again.";
+
+        return error == null;
+    }
+
+    // The scene's single enemy. Refuses to guess when there are several.
+    static GameObject FindOnlyEnemy(Scene scene, out string error)
     {
         GameObject found = null;
+        error = null;
 
         foreach (GameObject root in scene.GetRootGameObjects())
         {
@@ -98,8 +126,7 @@ public static class EnemyTransferTool
             {
                 if (found != null)
                 {
-                    Debug.LogWarning("EnemyTransferTool: " + scene.name + " has more than one enemy — " +
-                                     "remove the extras first so it's clear which one to use.");
+                    error = "'" + scene.name + "' has more than one enemy — remove the extras first so it's clear which one to use.";
                     return null;
                 }
 
@@ -108,21 +135,14 @@ public static class EnemyTransferTool
         }
 
         if (found == null)
-            Debug.LogWarning("EnemyTransferTool: no enemy found in " + scene.name + ".");
+            error = "No enemy (EnemyController) found in '" + scene.name + "'.";
 
         return found;
     }
 
-    static string FindScenePath(string sceneName)
+    static string Fail(string error)
     {
-        foreach (string guid in AssetDatabase.FindAssets(sceneName + " t:Scene"))
-        {
-            string path = AssetDatabase.GUIDToAssetPath(guid);
-
-            if (System.IO.Path.GetFileNameWithoutExtension(path) == sceneName)
-                return path;
-        }
-
-        return null;
+        Debug.LogWarning("EnemyTransferTool: " + error);
+        return "Nothing was changed.\n\n" + error;
     }
 }

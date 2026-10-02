@@ -28,20 +28,27 @@ public class EnemyAnimation : MonoBehaviour
 
     void UpdateFacingDirection()
     {
-        float direction = movement.GetMoveDirection();
-
-        if (direction > 0)
-        {
-            spriteRenderer.flipX = false;
-        }
-        else if (direction < 0)
-        {
-            spriteRenderer.flipX = true;
-        }
+        // The sprite art faces right; flip it when the enemy faces left.
+        spriteRenderer.flipX = movement.GetFacingDirection() < 0f;
     }
 
     public void PlayAttack()
     {
         animator.SetTrigger("Attack");
+    }
+
+    // Length in seconds of a clip on this enemy's Animator, or 0 if missing.
+    public float GetClipLength(string clipName)
+    {
+        if (animator == null || animator.runtimeAnimatorController == null)
+            return 0f;
+
+        foreach (AnimationClip clip in animator.runtimeAnimatorController.animationClips)
+        {
+            if (clip.name == clipName)
+                return clip.length;
+        }
+
+        return 0f;
     }
 }

@@ -3,15 +3,50 @@ using UnityEngine;
 public class EnemyTargeting : MonoBehaviour
 {
     private Transform currentTarget;
+    private Collider2D currentTargetCollider;
 
     public void SetTarget(Transform target)
     {
+        if (target == currentTarget)
+            return;
+
         currentTarget = target;
+        currentTargetCollider = target != null ? target.GetComponent<Collider2D>() : null;
     }
 
     public void ClearTarget()
     {
         currentTarget = null;
+        currentTargetCollider = null;
+    }
+
+    // The target's body, if it has an active collider.
+    public bool TryGetTargetBounds(out Bounds bounds)
+    {
+        if (currentTargetCollider != null && currentTargetCollider.enabled)
+        {
+            bounds = currentTargetCollider.bounds;
+            return true;
+        }
+
+        bounds = default;
+        return false;
+    }
+
+    // Bottom-centre of the target's body. Transform pivots differ between the
+    // player and enemy sprites, so compare feet rather than positions.
+    public Vector2 GetTargetFeetPosition()
+    {
+        if (currentTarget == null)
+            return Vector2.zero;
+
+        if (currentTargetCollider != null && currentTargetCollider.enabled)
+        {
+            Bounds bounds = currentTargetCollider.bounds;
+            return new Vector2(bounds.center.x, bounds.min.y);
+        }
+
+        return currentTarget.position;
     }
 
     public bool HasTarget()

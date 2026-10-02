@@ -1,14 +1,50 @@
+using System;
 using UnityEngine;
 
+public enum EnemyState
+{
+    Patrol,   // walking back and forth around home, looking for the player
+    Chase,    // player noticed — closing the distance
+    Attack,   // in range — swinging (holds still until the swing finishes)
+    Return,   // lost the player or strayed too far — walking back home
+    Stunned,  // knocked back (e.g. by a parry) — no AI until it wears off
+    Dead      // health ran out — does nothing
+}
+
+// Umbrella script for the enemy: runs the state machine and tells the other
+// enemy scripts what to do. It decides; they act — movement, sensing, patrol
+// and attacking all live in their own scripts.
 public class EnemyController : MonoBehaviour
 {
-    public float attackRange = 1.2f;
+    [Header("Attack")]
+    [Tooltip("How far inside the slash the player's body must be before the enemy swings. " +
+             "Higher = the enemy steps in closer, so a player who steps back a little still gets hit.")]
+    public float reachMargin = 0.25f;
+
+    [Tooltip("Only used if the player has no collider: horizontal distance at which the enemy swings.")]
+    public float fallbackAttackRange = 1.1f;
+
+    [Header("Chase")]
+    [Tooltip("How far from home the enemy will chase before giving up and returning.")]
+    public float leashDistance = 10f;
+
+    [Header("Debug")]
+    [SerializeField] private bool logStateChanges = false;
 
     private EnemyMovement movement;
     private EnemyDetection detection;
     private EnemyTargeting targeting;
     private EnemyAttack attack;
     private EnemyKnockback knockback;
+    private EnemyPatrol patrol;
+    private EnemyHealth health;
+
+    private EnemyState state = EnemyState.Patrol;
+
+    public EnemyState State => state;
+
+    // (previous, next) — hook for animation/audio/debug UI.
+    public event Action<EnemyState, EnemyState> OnStateChanged;
 
     void Awake()
     {
@@ -17,91 +53,255 @@ public class EnemyController : MonoBehaviour
         targeting = GetComponent<EnemyTargeting>();
         attack = GetComponent<EnemyAttack>();
         knockback = GetComponent<EnemyKnockback>();
+        patrol = GetComponent<EnemyPatrol>();
+        health = GetComponent<EnemyHealth>();
     }
 
     void Update()
     {
         // =========================
-        // KNOCKBACK LOCKOUT
+        // OVERRIDES (any state)
         // =========================
 
-        // While stunned, don't chase or attack — let the impulse play out.
-        if (knockback != null && knockback.IsKnockedBack)
+        if (health != null && health.IsDead)
+        {
+            ChangeState(EnemyState.Dead);
+        }
+        else if (knockback != null && knockback.IsKnockedBack)
+        {
+            ChangeState(EnemyState.Stunned);
+        }
+
+        // =========================
+        // STATE MACHINE
+        // =========================
+
+        switch (state)
+        {
+            case EnemyState.Patrol:  UpdatePatrol();  break;
+            case EnemyState.Chase:   UpdateChase();   break;
+            case EnemyState.Attack:  UpdateAttack();  break;
+            case EnemyState.Return:  UpdateReturn();  break;
+            case EnemyState.Stunned: UpdateStunned(); break;
+            case EnemyState.Dead:    movement.Stop(); break;
+        }
+    }
+
+    // =========================
+    // PATROL
+    // =========================
+
+    void UpdatePatrol()
+    {
+        if (TryNoticePlayer())
+            return;
+
+        // No EnemyPatrol on this enemy — guard the spot instead.
+        if (patrol == null)
         {
             movement.Stop();
             return;
         }
 
-        // =========================
-        // DETECTION
-        // =========================
-
-        Transform detectedPlayer = detection.GetDetectedPlayer();
-
-        if (detectedPlayer != null)
-        {
-            targeting.SetTarget(detectedPlayer);
-        }
-        else
-        {
-            targeting.ClearTarget();
-        }
-
-        // =========================
-        // NO TARGET
-        // =========================
-
-        if (!targeting.HasTarget())
-        {
-            movement.Stop();
-            return;
-        }
-
-        // =========================
-        // TARGET DISTANCE
-        // =========================
-
-        float distanceToTarget = targeting.GetDistanceToTarget();
-
-        // =========================
-        // ATTACK
-        // =========================
-
-        if (distanceToTarget <= attackRange)
-        {
-            AttackTarget();
-        }
-        else
-        {
-            ChaseTarget();
-        }
+        float direction = patrol.GetPatrolDirection();
+        Walk(direction * patrol.SpeedMultiplier);
     }
 
     // =========================
     // CHASE
     // =========================
 
-    void ChaseTarget()
+    void UpdateChase()
     {
-        float direction = targeting.GetHorizontalDirectionToTarget();
-
-        if (direction == 0f)
+        if (!RefreshTarget())
         {
-            movement.Stop();
+            ChangeState(EnemyState.Return);
             return;
         }
 
-        movement.Move(direction);
+        if (IsTooFarFromHome())
+        {
+            ChangeState(EnemyState.Return);
+            return;
+        }
+
+        if (IsTargetInAttackRange())
+        {
+            ChangeState(EnemyState.Attack);
+            return;
+        }
+
+        Walk(targeting.GetHorizontalDirectionToTarget());
     }
 
     // =========================
     // ATTACK
     // =========================
 
-    void AttackTarget()
+    void UpdateAttack()
     {
         movement.Stop();
 
+        // Committed to the swing — let it finish before deciding anything.
+        if (attack.IsAttacking)
+            return;
+
+        if (!RefreshTarget())
+        {
+            ChangeState(EnemyState.Return);
+            return;
+        }
+
+        if (!IsTargetInAttackRange())
+        {
+            ChangeState(EnemyState.Chase);
+            return;
+        }
+
+        // Turn toward the target first — standing still never updates facing,
+        // so without this the enemy could swing the wrong way.
+        movement.Face(targeting.GetHorizontalDirectionToTarget());
+
         attack.Attack();
+    }
+
+    // =========================
+    // RETURN
+    // =========================
+
+    void UpdateReturn()
+    {
+        if (TryNoticePlayer())
+            return;
+
+        if (patrol == null || patrol.IsHome())
+        {
+            ChangeState(EnemyState.Patrol);
+            return;
+        }
+
+        float direction = patrol.GetDirectionHome();
+
+        // Can't get home (knocked across a gap, etc.) — patrol here instead.
+        if (!movement.CanMove(direction))
+        {
+            patrol.MakeCurrentPositionHome();
+            ChangeState(EnemyState.Patrol);
+            return;
+        }
+
+        Walk(direction);
+    }
+
+    // =========================
+    // STUNNED
+    // =========================
+
+    void UpdateStunned()
+    {
+        movement.Stop();
+
+        if (knockback != null && knockback.IsKnockedBack)
+            return;
+
+        // Stun over — go straight back after the player if it's still around.
+        ChangeState(RefreshTarget() ? EnemyState.Chase : EnemyState.Return);
+    }
+
+    // =========================
+    // HELPERS
+    // =========================
+
+    // Starts a chase if the player can be sensed and is within the leash.
+    bool TryNoticePlayer()
+    {
+        if (!detection.CanSensePlayer())
+            return false;
+
+        Transform player = detection.GetDetectedPlayer();
+
+        // Don't re-aggro on a player standing beyond the leash — that would
+        // flip between Chase and Return at the leash boundary.
+        if (patrol != null && Mathf.Abs(player.position.x - patrol.HomeX) > leashDistance)
+            return false;
+
+        targeting.SetTarget(player);
+        ChangeState(EnemyState.Chase);
+        return true;
+    }
+
+    // Updates the target from detection. False when the player is lost.
+    bool RefreshTarget()
+    {
+        Transform player = detection.GetDetectedPlayer();
+
+        if (player == null)
+        {
+            targeting.ClearTarget();
+            return false;
+        }
+
+        targeting.SetTarget(player);
+        return true;
+    }
+
+    // Asks the attack whether its slash would actually land, facing the
+    // target. Measuring from the hitbox (rather than a distance between body
+    // centres) keeps both sides identical — the body colliders are offset
+    // from the pivots and don't flip with the sprite.
+    bool IsTargetInAttackRange()
+    {
+        if (!targeting.HasTarget())
+            return false;
+
+        float direction = targeting.GetHorizontalDirectionToTarget();
+
+        if (direction == 0f)
+            direction = movement.GetFacingDirection();
+
+        if (targeting.TryGetTargetBounds(out Bounds targetBounds))
+            return attack.IsInReach(targetBounds, direction, reachMargin);
+
+        Vector2 delta = targeting.GetTargetFeetPosition() - movement.GetFeetPosition();
+        return Mathf.Abs(delta.x) <= fallbackAttackRange && Mathf.Abs(delta.y) <= 1f;
+    }
+
+    bool IsTooFarFromHome()
+    {
+        return patrol != null && Mathf.Abs(transform.position.x - patrol.HomeX) > leashDistance;
+    }
+
+    // Moves in a direction unless that would walk off a ledge or into a wall,
+    // in which case the enemy turns to face that way and waits.
+    void Walk(float direction)
+    {
+        if (direction == 0f)
+        {
+            movement.Stop();
+            return;
+        }
+
+        if (!movement.CanMove(direction))
+        {
+            movement.Stop();
+            movement.Face(direction);
+            return;
+        }
+
+        movement.Move(direction);
+    }
+
+    void ChangeState(EnemyState next)
+    {
+        if (next == state)
+            return;
+
+        EnemyState previous = state;
+        state = next;
+
+        if (logStateChanges)
+            Debug.Log(name + ": " + previous + " -> " + next, this);
+
+        OnStateChanged?.Invoke(previous, next);
     }
 }

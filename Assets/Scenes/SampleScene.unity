@@ -1794,14 +1794,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b51c8b69ad3270449f4632f75a04f73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  detectionRange: 5
+  detectionRange: 8
   sightHalfAngle: 60
   eyeOffset: {x: 0, y: 0.6}
   obstacleMask:
     serializedVersion: 2
     m_Bits: 0
-  hearingRange: 1.5
-  memoryDuration: 2
+  hearingRange: 3
+  memoryDuration: 3
 --- !u!95 &952280045
 Animator:
   serializedVersion: 7

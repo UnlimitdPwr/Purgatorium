@@ -3,25 +3,29 @@ using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour
 {
-    [Header("Health")]
-    [SerializeField] private int maxHealth = 100;
-
     private int currentHealth;
+
+    private PlayerStats playerStats;
     private BlockScript block;
 
     public int CurrentHealth => currentHealth;
-    public int MaxHealth => maxHealth;
+
+    // Gets the player's maximum health from PlayerStats.
+    public int MaxHealth => playerStats.MaxHealth;
 
     public event Action<int, int> OnHealthChanged;
 
     private void Awake()
     {
-        currentHealth = maxHealth;
-
+        playerStats = GetComponent<PlayerStats>();
         block = GetComponent<BlockScript>();
 
-        Debug.Log("Player Health initialized: " +
-                  currentHealth + "/" + maxHealth);
+        currentHealth = MaxHealth;
+
+        Debug.Log(
+            "Player Health initialized: " +
+            currentHealth + "/" + MaxHealth
+        );
     }
 
     public void TakeDamage(int damage)
@@ -29,7 +33,10 @@ public class PlayerHealth : MonoBehaviour
         if (damage <= 0)
             return;
 
-        Debug.Log("TAKE DAMAGE CALLED | Incoming damage: " + damage);
+        Debug.Log(
+            "TAKE DAMAGE CALLED | Incoming damage: " +
+            damage
+        );
 
         int finalDamage = damage;
 
@@ -47,7 +54,7 @@ public class PlayerHealth : MonoBehaviour
 
         Debug.Log(
             "HEALTH BEFORE DAMAGE: " +
-            currentHealth + "/" + maxHealth
+            currentHealth + "/" + MaxHealth
         );
 
         currentHealth -= finalDamage;
@@ -57,39 +64,35 @@ public class PlayerHealth : MonoBehaviour
 
         Debug.Log(
             "HEALTH AFTER DAMAGE: " +
-            currentHealth + "/" + maxHealth
+            currentHealth + "/" + MaxHealth
         );
 
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        OnHealthChanged?.Invoke(currentHealth, MaxHealth);
     }
 
     public void Heal(int amount)
     {
-        Debug.Log("!!! HEAL CALLED: " + amount);
-
         if (amount <= 0)
             return;
 
         currentHealth += amount;
 
-        if (currentHealth > maxHealth)
-            currentHealth = maxHealth;
+        if (currentHealth > MaxHealth)
+            currentHealth = MaxHealth;
 
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        OnHealthChanged?.Invoke(currentHealth, MaxHealth);
     }
 
+    // Restores the player's health to their current maximum health.
     public void RestoreFullHealth()
     {
-        Debug.Log("!!! RESTORE FULL HEALTH CALLED");
-
-        currentHealth = maxHealth;
+        currentHealth = MaxHealth;
 
         Debug.Log(
             "PLAYER HEALTH RESTORED: " +
-            currentHealth + "/" + maxHealth
+            currentHealth + "/" + MaxHealth
         );
 
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        OnHealthChanged?.Invoke(currentHealth, MaxHealth);
     }
-
 }

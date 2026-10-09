@@ -26,6 +26,9 @@ public class BonfireUI : MonoBehaviour
 
     private Coroutine transitionCoroutine;
 
+    // This property tells other UI scripts whether the player is using the bonfire menu.
+    public bool IsOpen { get; private set; }
+
 
     private void Awake()
     {
@@ -49,6 +52,9 @@ public class BonfireUI : MonoBehaviour
 
     public void Open(GameObject player, Bonfire bonfire)
     {
+        // Mark the bonfire menu as open so gameplay-only UI cannot be opened.
+        IsOpen = true;
+
         // This function starts the transition into the Bonfire resting state and opens the main Bonfire menu.
 
         playerController = player.GetComponent<PlayerController1>();
@@ -141,6 +147,9 @@ public class BonfireUI : MonoBehaviour
 
     public void Close()
     {
+        // Mark the bonfire menu as closed.
+        IsOpen = false;
+
         // This function immediately hides the Bonfire UI.
 
         mainPanel.SetActive(true);
@@ -154,6 +163,9 @@ public class BonfireUI : MonoBehaviour
 
     public void Leave()
     {
+        // Mark the bonfire menu as closed when returning to gameplay.
+        IsOpen = false;
+
         // This function exits the Bonfire resting state and restores the player's normal HUD.
 
         if (playerController == null)

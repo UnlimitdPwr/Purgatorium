@@ -49,15 +49,32 @@ public class PlayerStamina : MonoBehaviour
 
     private void Awake()
     {
+        // This function initializes stamina and connects the stamina system to PlayerStats.
         playerStats = GetComponent<PlayerStats>();
 
         currentStamina = MaxStamina;
 
         dash = GetComponent<DashScript>();
+
+        if (playerStats != null)
+        {
+            playerStats.OnStatsChanged += OnStatsChanged;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // This function removes the PlayerStats event subscription when the stamina component is destroyed.
+        if (playerStats != null)
+        {
+            playerStats.OnStatsChanged -= OnStatsChanged;
+        }
     }
 
     private void Update()
     {
+        // This function handles exhaustion timing, stamina draining and stamina regeneration every frame.
+
         if (exhaustionTimer > 0f)
         {
             exhaustionTimer = Mathf.Max(
@@ -112,6 +129,7 @@ public class PlayerStamina : MonoBehaviour
 
     private void Drain(float amount)
     {
+        // This function removes stamina and starts exhaustion when stamina reaches zero.
         if (amount <= 0f)
             return;
 
@@ -125,6 +143,7 @@ public class PlayerStamina : MonoBehaviour
 
     private void Regenerate(float amount)
     {
+        // This function regenerates stamina up to the player's current maximum stamina.
         if (amount <= 0f)
             return;
 
@@ -133,6 +152,7 @@ public class PlayerStamina : MonoBehaviour
 
     private void SetStamina(float value)
     {
+        // This function sets stamina within the valid 0-to-maximum range and notifies the stamina bar.
         float clamped = Mathf.Clamp(
             value,
             0f,
@@ -147,6 +167,17 @@ public class PlayerStamina : MonoBehaviour
         }
 
         currentStamina = clamped;
+
+        OnStaminaChanged?.Invoke(
+            currentStamina,
+            MaxStamina
+        );
+    }
+
+    private void OnStatsChanged()
+    {
+        // This function immediately fills stamina to the new maximum after the player upgrades Stamina.
+        currentStamina = MaxStamina;
 
         OnStaminaChanged?.Invoke(
             currentStamina,

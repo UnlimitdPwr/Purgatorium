@@ -45,6 +45,7 @@ public class BonfireStatsUI : MonoBehaviour
     [Header("Confirmation")]
     [SerializeField] private Button confirmButton;
     [SerializeField] private Button cancelButton;
+    [SerializeField] private Button backButton;
 
     private int originalHealthLevel;
     private int originalStaminaLevel;
@@ -381,5 +382,18 @@ public class BonfireStatsUI : MonoBehaviour
     {
         // This function refreshes the Stats UI when the player's Essence changes.
         RefreshUI();
+    }
+
+    public void BackToBonfire()
+    {
+        // This function discards unconfirmed upgrades and returns to the main Bonfire menu.
+        Cancel();
+
+        BonfireUI bonfireUI = FindFirstObjectByType<BonfireUI>();
+
+        if (bonfireUI != null)
+        {
+            bonfireUI.CloseStats();
+        }
     }
 }

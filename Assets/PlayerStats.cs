@@ -51,11 +51,17 @@ public class PlayerStats : MonoBehaviour
         baseHealth +
         ((healthLevel - 1) * healthPerLevel);
 
+    // Returns the player's maximum Health at Level 1.
+    public int MaxHealthAtLevelOne => baseHealth;
+
 
     // Calculates the player's maximum Stamina based on their Stamina level.
     public float MaxStamina =>
         baseStamina +
         ((staminaLevel - 1) * staminaPerLevel);
+
+    // Returns the player's maximum Stamina at Level 1.
+    public float MaxStaminaAtLevelOne => baseStamina;
 
 
     public int GetUpgradeCost(int currentLevel)
@@ -89,8 +95,7 @@ public class PlayerStats : MonoBehaviour
         for (
             int level = originalLevel;
             level < pendingLevel;
-            level++
-        )
+            level++)
         {
             totalCost += GetUpgradeCost(level);
         }

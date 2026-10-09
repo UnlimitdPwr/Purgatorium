@@ -1,3 +1,4 @@
+
 using TMPro;
 using UnityEngine;
 
@@ -5,6 +6,12 @@ public class InventoryUI : MonoBehaviour
 {
     [Header("Player")]
     [SerializeField] private PlayerInput playerInput;
+
+    [Header("Game State")]
+    [SerializeField] private BonfireUI bonfireUI;
+
+    [Tooltip("Assign other menu panels that should prevent the inventory from opening, such as Pause or Dialogue menus.")]
+    [SerializeField] private GameObject[] otherBlockingMenus;
 
     [Header("Inventory")]
     [SerializeField] private InventorySystem inventory;
@@ -23,7 +30,7 @@ public class InventoryUI : MonoBehaviour
 
     private void Start()
     {
-        // This function creates the inventory UI and hides it when the game starts.
+        // This function creates the inventory slots and hides the inventory at startup.
         CreateInventoryUI();
 
         inventoryPanel.SetActive(false);
@@ -31,17 +38,55 @@ public class InventoryUI : MonoBehaviour
 
     private void Update()
     {
-        // This checks the centralized player input for the inventory button.
-        if (playerInput != null &&
-            playerInput.InventoryPressed)
+        // This function prevents the inventory from remaining open while another menu is active.
+        if (IsInventoryBlocked())
+        {
+            if (inventoryPanel.activeSelf)
+            {
+                inventoryPanel.SetActive(false);
+            }
+
+            return;
+        }
+
+        // This function allows the player to toggle the inventory during normal gameplay.
+        if (playerInput != null && playerInput.InventoryPressed)
         {
             ToggleInventory();
         }
     }
 
-    // This function opens or closes the inventory window.
+    private bool IsInventoryBlocked()
+    {
+        // This function checks whether the bonfire or another assigned menu blocks inventory access.
+        if (bonfireUI != null && bonfireUI.IsOpen)
+        {
+            return true;
+        }
+
+        if (otherBlockingMenus != null)
+        {
+            foreach (GameObject menu in otherBlockingMenus)
+            {
+                if (menu != null && menu.activeInHierarchy)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public void ToggleInventory()
     {
+        // This function opens or closes the inventory only when gameplay UI is allowed.
+        if (IsInventoryBlocked())
+        {
+            inventoryPanel.SetActive(false);
+            return;
+        }
+
         bool shouldShow = !inventoryPanel.activeSelf;
 
         inventoryPanel.SetActive(shouldShow);
@@ -52,9 +97,9 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
-    // This function creates one UI slot for every inventory slot.
     private void CreateInventoryUI()
     {
+        // This function creates a UI slot for every slot in the player's inventory.
         int slotCount = inventory.Slots.Count;
 
         slotUI = new InventorySlotUI[slotCount];
@@ -75,9 +120,12 @@ public class InventoryUI : MonoBehaviour
         UpdateSelection();
     }
 
-    // This function refreshes every inventory slot.
     public void RefreshInventory()
     {
+        // This function refreshes the displayed contents of every inventory slot.
+        if (slotUI == null)
+            return;
+
         for (int i = 0; i < slotUI.Length; i++)
         {
             slotUI[i].UpdateSlot(
@@ -88,11 +136,17 @@ public class InventoryUI : MonoBehaviour
         UpdateSelection();
     }
 
-    // This function updates which inventory slot is currently selected.
     private void UpdateSelection()
     {
+        // This function updates the visual selection and information for the selected slot.
         if (slotUI == null || slotUI.Length == 0)
             return;
+
+        selectedIndex = Mathf.Clamp(
+            selectedIndex,
+            0,
+            slotUI.Length - 1
+        );
 
         for (int i = 0; i < slotUI.Length; i++)
         {
@@ -104,9 +158,12 @@ public class InventoryUI : MonoBehaviour
         UpdateSelectedItemInformation();
     }
 
-    // This function displays the name and description of the selected item.
     private void UpdateSelectedItemInformation()
     {
+        // This function displays the selected item's name and description.
+        if (itemNameText == null || itemDescriptionText == null)
+            return;
+
         InventorySlot slot =
             inventory.GetSlot(selectedIndex);
 
@@ -114,7 +171,6 @@ public class InventoryUI : MonoBehaviour
         {
             itemNameText.text = "";
             itemDescriptionText.text = "";
-
             return;
         }
 

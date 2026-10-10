@@ -75,8 +75,10 @@ public class BlockScript : MonoBehaviour
 
         float damageMultiplier = 1f - blockDamageReduction * Effectiveness;
 
+        // Round down, but with a tiny tolerance: float maths makes 1 - 0.6
+        // come out as 0.39999998, which would floor 10 * 0.4 to 3 instead of 4.
         int blockedDamage = Mathf.FloorToInt(
-            incomingDamage * damageMultiplier
+            incomingDamage * damageMultiplier + 0.0001f
         );
 
         return Mathf.Max(0, blockedDamage);

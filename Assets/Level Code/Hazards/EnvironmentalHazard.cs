@@ -95,7 +95,10 @@ public class EnvironmentalHazard : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (hazardType == null)
+        // Only bodies count. Characters carry trigger zones that reach past
+        // their body (the player's InteractionPoint, enemy attack hitboxes) —
+        // those touching the hazard mustn't hurt them.
+        if (hazardType == null || other.isTrigger)
             return;
 
         HazardReceiver receiver = other.GetComponentInParent<HazardReceiver>();
@@ -149,6 +152,31 @@ public class EnvironmentalHazard : MonoBehaviour
 
         foreach (HazardReceiver receiver in scratch)
             Release(receiver);
+    }
+
+    // =========================
+    // QUERIES (enemy AI)
+    // =========================
+
+    private static readonly List<Collider2D> queryResults = new List<Collider2D>();
+
+    // True if any hazard that affects enemies overlaps this box.
+    public static bool AnyAffectingEnemies(Vector2 center, Vector2 size)
+    {
+        ContactFilter2D filter = new ContactFilter2D();
+        filter.useTriggers = true;
+
+        Physics2D.OverlapBox(center, size, 0f, filter, queryResults);
+
+        foreach (Collider2D hit in queryResults)
+        {
+            EnvironmentalHazard hazard = hit.GetComponent<EnvironmentalHazard>();
+
+            if (hazard != null && hazard.enabled && hazard.Type != null && hazard.Type.affectsEnemies)
+                return true;
+        }
+
+        return false;
     }
 
     // =========================

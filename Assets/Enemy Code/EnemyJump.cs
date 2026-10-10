@@ -499,6 +499,9 @@ public class EnemyJump : MonoBehaviour
         if (!HasRoomToStand(landing))
             return false;
 
+        if (movement.IsHazardAt(landing, GetBodySize()))
+            return false;
+
         velocity = new Vector2(vx, vy);
         return IsArcClear(from, velocity, landing.y);
     }

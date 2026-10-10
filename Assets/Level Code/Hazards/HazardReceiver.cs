@@ -16,6 +16,8 @@ public class HazardReceiver : MonoBehaviour
 
     public bool IsPlayer => playerHealth != null;
 
+    public bool IsInHazard => hazardsInside.Count > 0;
+
     // Slowest multiplier of every hazard the character is in; 1 outside.
     public float SpeedMultiplier
     {

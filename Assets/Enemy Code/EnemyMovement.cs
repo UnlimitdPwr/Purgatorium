@@ -23,6 +23,14 @@ public class EnemyMovement : MonoBehaviour
     public float ledgeCheckDepth = 1f;
 
     // =========================
+    // HAZARDS
+    // =========================
+
+    [Tooltip("Treat environmental hazards (acid, lava...) like ledges: stop at them, jump " +
+             "across if possible, never jump into them. Turn off for enemies that live in them.")]
+    public bool avoidHazards = true;
+
+    // =========================
     // PRIVATE VARIABLES
     // =========================
 
@@ -165,7 +173,42 @@ public class EnemyMovement : MonoBehaviour
     // stop at the edge instead of falling off it.
     public bool CanMove(float direction)
     {
-        return !IsLedgeAhead(direction) && !IsWallAhead(direction);
+        return !IsLedgeAhead(direction) && !IsWallAhead(direction) && !IsHazardAhead(direction);
+    }
+
+    // True when a hazard is just in front of the feet, at floor level or in
+    // the drop below (the same depth the ledge check looks).
+    public bool IsHazardAhead(float direction)
+    {
+        if (!avoidHazards || direction == 0f || body == null)
+            return false;
+
+        // Already standing in one — don't trap the enemy; let it walk out.
+        if (hazards != null && hazards.IsInHazard)
+            return false;
+
+        float sign = Mathf.Sign(direction);
+        Bounds bounds = body.bounds;
+
+        float top = bounds.min.y + bounds.size.y * 0.5f;
+        float bottom = bounds.min.y - ledgeCheckDepth;
+
+        Vector2 center = new Vector2(
+            bounds.center.x + sign * (bounds.extents.x + edgeLookAhead * 0.5f),
+            (top + bottom) * 0.5f
+        );
+
+        return EnvironmentalHazard.AnyAffectingEnemies(center, new Vector2(edgeLookAhead, top - bottom));
+    }
+
+    // True when a body of this size standing with its feet at `feet` would be
+    // inside a hazard. EnemyJump uses it to reject landing spots.
+    public bool IsHazardAt(Vector2 feet, Vector2 bodySize)
+    {
+        if (!avoidHazards)
+            return false;
+
+        return EnvironmentalHazard.AnyAffectingEnemies(feet + new Vector2(0f, bodySize.y * 0.5f), bodySize * 0.9f);
     }
 
     // True when there's no ground just in front of the feet.

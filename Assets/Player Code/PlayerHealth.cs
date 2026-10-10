@@ -91,6 +91,20 @@ public class PlayerHealth : MonoBehaviour
         OnHealthChanged?.Invoke(currentHealth, MaxHealth);
     }
 
+    // Drops health straight to 0 (e.g. a full curse bar). PlayerDeath
+    // picks it up from OnHealthChanged like any other death.
+    public void Kill()
+    {
+        if (currentHealth <= 0)
+            return;
+
+        currentHealth = 0;
+
+        Debug.Log("PLAYER KILLED OUTRIGHT");
+
+        OnHealthChanged?.Invoke(currentHealth, MaxHealth);
+    }
+
     public void Heal(int amount)
     {
         if (amount <= 0)

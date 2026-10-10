@@ -4037,6 +4037,7 @@ GameObject:
   - component: {fileID: 952280041}
   - component: {fileID: 952280040}
   - component: {fileID: 952280039}
+  - component: {fileID: 952280054}
   m_Layer: 7
   m_Name: Enemy
   m_TagString: Untagged
@@ -4089,7 +4090,6 @@ MonoBehaviour:
   secondaryThreshold: 100
   parryPrimaryAmount: 10
   parrySecondaryAmount: 20
-  statusEffectAmount: 10
 --- !u!114 &952280042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4136,6 +4136,7 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 0
+  trackWhileAlerted: 1
   hearingRange: 3
   memoryDuration: 3
 --- !u!95 &952280045
@@ -4174,6 +4175,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   damage: 20
   attackCooldown: 1
+  minComboSwings: 1
+  maxComboSwings: 3
+  comboSwingDelay: 0.15
+  hitbox: {fileID: 0}
 --- !u!114 &952280047
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4186,6 +4191,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86a572ac88ec6df45b6c6426b58747fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  flashDuringWindUp: 1
+  windUpTint: {r: 1, g: 0.45, b: 0.45, a: 1}
+  windUpFlashRate: 8
 --- !u!114 &952280048
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4199,7 +4207,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   moveSpeed: 3
-  jumpForce: 10
   groundCheck: {fileID: 1378009124}
   groundCheckRadius: 0.1
   groundLayer:
@@ -4222,6 +4229,7 @@ MonoBehaviour:
   reachMargin: 0.25
   fallbackAttackRange: 1.1
   leashDistance: 10
+  levelDifference: 0.5
   logStateChanges: 0
 --- !u!70 &952280050
 CapsuleCollider2D:
@@ -4365,6 +4373,26 @@ Transform:
   - {fileID: 1957729620}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &952280054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 952280038}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00a68ba5bcbbc4f0a9714ab9444833a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyStatusEffects
+  statusEffects:
+  - {fileID: 11400000, guid: bed1883ee13ee4fd3a328f075241b90c, type: 2}
+  - {fileID: 11400000, guid: 7fa0ae576cef246a1a6f1945ebafd154, type: 2}
+  - {fileID: 11400000, guid: 0f38ac82577db498ea3dc7b44b6a134f, type: 2}
+  - {fileID: 11400000, guid: 5e64fe9a4682a44b98654465244cd557, type: 2}
+  debugStatus: 0
+  debugAmount: 10
+  resistances: []
 --- !u!1 &960305509
 GameObject:
   m_ObjectHideFlags: 0
@@ -9076,6 +9104,7 @@ RectTransform:
   m_Children:
   - {fileID: 1910917892}
   - {fileID: 1797001574}
+  - {fileID: 1856967519}
   - {fileID: 61242802}
   m_Father: {fileID: 2002682918}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -9425,6 +9454,61 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 220, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &1856967518
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1856967519}
+  - component: {fileID: 1856967520}
+  m_Layer: 5
+  m_Name: PlayerStatusBars
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1856967519
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1856967518}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1774931490}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -482.4087, y: 129.181}
+  m_SizeDelta: {x: 300, y: 50}
+  m_Pivot: {x: 0, y: 1}
+--- !u!114 &1856967520
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1856967518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9075900458d04be4996aeb4a15b1c1f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStatusBars
+  playerStatus: {fileID: 2003877436}
+  barWidth: 150
+  barHeight: 8
+  spacing: 4
+  labelFontSize: 12
+  backgroundColor: {r: 0, g: 0, b: 0, a: 0.6}
+  conditionPulseSpeed: 3
 --- !u!1 &1884219078
 GameObject:
   m_ObjectHideFlags: 0
@@ -10221,6 +10305,7 @@ GameObject:
   - component: {fileID: 2003877433}
   - component: {fileID: 2003877435}
   - component: {fileID: 2003877434}
+  - component: {fileID: 2003877436}
   m_Layer: 9
   m_Name: Player
   m_TagString: Player
@@ -10636,6 +10721,25 @@ MonoBehaviour:
   staminaPerLevel: 5
   startingUpgradeCost: 100
   upgradeCostMultiplier: 1.25
+--- !u!114 &2003877436
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2003877414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c97cfa4847dfa4e919630d98fd4b8d3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStatusEffects
+  statusEffects:
+  - {fileID: 11400000, guid: bed1883ee13ee4fd3a328f075241b90c, type: 2}
+  - {fileID: 11400000, guid: 7fa0ae576cef246a1a6f1945ebafd154, type: 2}
+  - {fileID: 11400000, guid: 0f38ac82577db498ea3dc7b44b6a134f, type: 2}
+  - {fileID: 11400000, guid: 5e64fe9a4682a44b98654465244cd557, type: 2}
+  debugStatus: 0
+  debugAmount: 10
 --- !u!1 &2030937312
 GameObject:
   m_ObjectHideFlags: 0

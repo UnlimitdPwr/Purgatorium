@@ -33,6 +33,14 @@ public class Bonfire : MonoBehaviour, IInteractable
             playerStamina.RestoreFullStamina();
         }
 
+        PlayerStatusEffects playerStatus =
+            interactor.GetComponent<PlayerStatusEffects>();
+
+        if (playerStatus != null)
+        {
+            playerStatus.ClearAll();
+        }
+
         // This bonfire becomes the current checkpoint.
         if (CheckpointManager.Instance != null)
         {

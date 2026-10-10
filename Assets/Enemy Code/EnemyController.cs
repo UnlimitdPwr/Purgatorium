@@ -49,6 +49,7 @@ public class EnemyController : MonoBehaviour
     private EnemyJump jump;
     private EnemyRetreat retreat;
     private EnemyJumpAttack jumpAttack;
+    private EnemyAttackToken token;
 
     private EnemyState state = EnemyState.Patrol;
 
@@ -82,6 +83,7 @@ public class EnemyController : MonoBehaviour
         jump = GetComponent<EnemyJump>();
         retreat = GetComponent<EnemyRetreat>();
         jumpAttack = GetComponent<EnemyJumpAttack>();
+        token = GetComponent<EnemyAttackToken>();
     }
 
     void Update()
@@ -157,12 +159,25 @@ public class EnemyController : MonoBehaviour
 
         if (IsTargetInAttackRange())
         {
+            // Too many others already attacking — wait for a turn.
+            if (!TryTakeAttackTurn())
+            {
+                HoldBack();
+                return;
+            }
+
             ChangeState(EnemyState.Attack);
             return;
         }
 
         if (TryStartJumpAttack())
             return;
+
+        if (IsWaitingForTurn())
+        {
+            HoldBack();
+            return;
+        }
 
         float direction = targeting.GetHorizontalDirectionToTarget();
 
@@ -359,9 +374,13 @@ public class EnemyController : MonoBehaviour
         if (patrol != null && Mathf.Abs(targetGround.x - patrol.HomeX) > leashDistance)
             return false;
 
+        if (token != null && !token.CanAcquire)
+            return false;
+
         if (!jumpAttack.TryChooseLeap(targetGround))
             return false;
 
+        TryTakeAttackTurn();
         ChangeState(EnemyState.JumpAttack);
         jumpAttack.Begin();
         return true;
@@ -374,6 +393,33 @@ public class EnemyController : MonoBehaviour
             return;
 
         ChangeState(RefreshTarget() ? EnemyState.Chase : EnemyState.Return);
+    }
+
+    // =========================
+    // ATTACK TURNS
+    // =========================
+
+    // True if this enemy may attack now (it has, or just took, a token — or
+    // doesn't use tokens).
+    bool TryTakeAttackTurn()
+    {
+        return token == null || token.TryAcquire();
+    }
+
+    // No free token and already close enough: hang back instead of closing in.
+    bool IsWaitingForTurn()
+    {
+        if (token == null || token.CanAcquire)
+            return false;
+
+        float distance = Mathf.Abs(targeting.GetTargetFeetPosition().x - movement.GetFeetPosition().x);
+        return distance <= token.waitDistance;
+    }
+
+    void HoldBack()
+    {
+        movement.Stop();
+        movement.Face(targeting.GetHorizontalDirectionToTarget());
     }
 
     // =========================
@@ -603,6 +649,11 @@ public class EnemyController : MonoBehaviour
 
         if (previous == EnemyState.JumpAttack && jumpAttack != null)
             jumpAttack.Cancel();
+
+        // Done attacking (retreating, chasing again, stunned, dead...) —
+        // hand the turn to another enemy.
+        if (token != null && next != EnemyState.Attack && next != EnemyState.JumpAttack)
+            token.Release();
 
         // While after the player, keep track of them outside the sight cone.
         if (detection != null)

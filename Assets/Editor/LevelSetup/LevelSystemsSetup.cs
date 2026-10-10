@@ -30,6 +30,7 @@ public static class LevelSystemsSetup
         changed |= AddToEnemies<EnemyAttackToken>();
         changed |= AddToEnemies<EnemyLoot>();
         changed |= AddToEnemies<EnemyRespawn>();
+        changed |= AddToEnemies<EnemyStatusOnHit>();
         changed |= AddPlayerStatsToPlayers();
 
         if (!changed)

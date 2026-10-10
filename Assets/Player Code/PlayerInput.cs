@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 public class PlayerInput : MonoBehaviour
 {
     public float MoveInput { get; private set; }
+    public float VerticalInput { get; private set; }
 
     public bool JumpPressed { get; private set; }
     public bool JumpReleased { get; private set; }
@@ -25,6 +26,7 @@ public class PlayerInput : MonoBehaviour
         {
             // This resets all input when no keyboard is available.
             MoveInput = 0f;
+            VerticalInput = 0f;
             JumpPressed = false;
             JumpReleased = false;
             ParryPressed = false;
@@ -46,6 +48,12 @@ public class PlayerInput : MonoBehaviour
 
         if (keyboard.dKey.isPressed)
             MoveInput = 1f;
+
+        VerticalInput = 0f;
+        if (keyboard.sKey.isPressed)
+            VerticalInput = -1f;
+        if (keyboard.wKey.isPressed)
+            VerticalInput = 1f;
 
         // Button inputs
         JumpPressed = keyboard.spaceKey.wasPressedThisFrame;

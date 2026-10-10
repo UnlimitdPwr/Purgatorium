@@ -10,6 +10,7 @@ public class PlayerController1 : MonoBehaviour
     private BonfirePlacement bonfirePlacement;
     private PlayerKnockback knockback;
     private WallJumpScript wallJump;
+    private LadderClimbScript ladderClimb;
 
     private bool isResting;
 
@@ -25,6 +26,7 @@ public class PlayerController1 : MonoBehaviour
         bonfirePlacement = GetComponent<BonfirePlacement>();
         knockback = GetComponent<PlayerKnockback>();
         wallJump = GetComponent<WallJumpScript>();
+        ladderClimb = GetComponent<LadderClimbScript>();
     }
 
     void Update()
@@ -40,6 +42,7 @@ public class PlayerController1 : MonoBehaviour
             return;
 
         HandleMovement();
+        HandleLadderClimb();
         HandleJump();
         HandleWallJump();
         HandleParry();
@@ -85,6 +88,23 @@ public class PlayerController1 : MonoBehaviour
     void HandleMovement()
     {
         movement.SetMoveInput(playerInput.MoveInput);
+    }
+
+    // =========================
+    // LADDER
+    // =========================
+
+    // Runs before HandleJump: jumping off a ladder replaces the normal jump
+    // (which then does nothing anyway, since the player isn't grounded).
+    void HandleLadderClimb()
+    {
+        if (ladderClimb == null)
+            return;
+
+        ladderClimb.SetClimbInput(playerInput.VerticalInput, playerInput.MoveInput);
+
+        if (playerInput.JumpPressed)
+            ladderClimb.TryJumpOff();
     }
 
     // =========================

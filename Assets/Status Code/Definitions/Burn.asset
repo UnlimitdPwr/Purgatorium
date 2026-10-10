@@ -19,6 +19,68 @@ MonoBehaviour:
   recedeDelay: 2
   recedeRate: 10
   conditionDuration: 10
-  tickInterval: 1
-  playerDamagePerTick: 2
-  enemyDamagePerTick: 5
+  onPlayer:
+    damageOverTime:
+      enabled: 1
+      damagePerTick: 2
+      tickInterval: 1
+    burstDamageOnStart:
+      enabled: 0
+      damage: 15
+    instantDeath:
+      enabled: 0
+    slowMovement:
+      enabled: 0
+      multiplier: 0.7
+    weakerJump:
+      enabled: 0
+      multiplier: 0.6
+    staminaDrain:
+      enabled: 0
+      drainPerSecond: 5
+    slowerStaminaRegen:
+      enabled: 0
+      multiplier: 0.5
+    dashSprintDisabled:
+      enabled: 0
+      disableDash: 1
+      disableSprint: 1
+    weakerBlock:
+      enabled: 0
+      effectiveness: 0.5
+      disableBlock: 0
+    weakerParry:
+      enabled: 0
+      windowMultiplier: 0.5
+      disableParry: 0
+    reducedHealing:
+      enabled: 0
+      multiplier: 0.5
+  onEnemy:
+    damageOverTime:
+      enabled: 1
+      damagePerTick: 5
+      tickInterval: 1
+    burstDamageOnStart:
+      enabled: 0
+      damage: 15
+    slowMovement:
+      enabled: 0
+      multiplier: 0.7
+    slowerAttacks:
+      enabled: 0
+      multiplier: 1.5
+    weakerAttacks:
+      enabled: 0
+      multiplier: 0.75
+    parryVulnerability:
+      enabled: 0
+      multiplier: 1.5
+    stunOnStart:
+      enabled: 0
+      duration: 1
+    blinded:
+      enabled: 0
+      multiplier: 0.5
+    cannotJump:
+      enabled: 0

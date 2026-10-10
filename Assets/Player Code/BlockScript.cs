@@ -13,6 +13,7 @@ public class BlockScript : MonoBehaviour
 
     private bool isBlocking;
     private PlayerAnimation playerAnimation;
+    private PlayerStatusEffects status;
 
     public bool IsBlocking => isBlocking;
     
@@ -20,6 +21,7 @@ public class BlockScript : MonoBehaviour
     private void Awake()
     {
         playerAnimation = GetComponent<PlayerAnimation>();
+        status = GetComponent<PlayerStatusEffects>();
     }
 
     // =========================
@@ -63,15 +65,20 @@ public class BlockScript : MonoBehaviour
     // DAMAGE REDUCTION
     // =========================
 
+    // A status condition can weaken blocks (1 = full strength).
+    float Effectiveness => status != null ? status.BlockEffectiveness : 1f;
+
     public int GetBlockedDamage(int incomingDamage)
     {
         if (incomingDamage <= 0)
             return 0;
 
-        float damageMultiplier = 1f - blockDamageReduction;
+        float damageMultiplier = 1f - blockDamageReduction * Effectiveness;
 
+        // Round down, but with a tiny tolerance: float maths makes 1 - 0.6
+        // come out as 0.39999998, which would floor 10 * 0.4 to 3 instead of 4.
         int blockedDamage = Mathf.FloorToInt(
-            incomingDamage * damageMultiplier
+            incomingDamage * damageMultiplier + 0.0001f
         );
 
         return Mathf.Max(0, blockedDamage);
@@ -82,6 +89,6 @@ public class BlockScript : MonoBehaviour
         if (incomingBuildup <= 0f)
             return 0f;
 
-        return incomingBuildup * (1f - blockStatusReduction);
+        return incomingBuildup * (1f - blockStatusReduction * Effectiveness);
     }
 }

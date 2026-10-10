@@ -7,9 +7,9 @@ using UnityEngine;
 // How a status works (same for player and enemies):
 //   Exposure adds buildup. Stop being exposed and, after recedeDelay, the
 //   buildup drains away at recedeRate. If it reaches the threshold instead,
-//   the condition starts: it deals damage every tickInterval while the
-//   buildup drains from the threshold back to 0 over conditionDuration.
-//   No new buildup of that status lands until it's back at 0.
+//   the condition starts and its effects (below — tick the ones you want)
+//   last while the buildup drains from the threshold back to 0 over
+//   conditionDuration. No new buildup of that status lands until it's back at 0.
 [CreateAssetMenu(fileName = "NewStatusEffect", menuName = "Status Effects/Status Effect")]
 public class StatusEffectDefinition : ScriptableObject
 {
@@ -36,12 +36,10 @@ public class StatusEffectDefinition : ScriptableObject
     [Tooltip("Seconds the condition lasts — the time the bar takes to drain from the threshold to 0.")]
     [Min(0.1f)] public float conditionDuration = 10f;
 
-    [Tooltip("Seconds between damage ticks while the condition is active.")]
-    [Min(0.05f)] public float tickInterval = 1f;
+    [Header("Condition Effects")]
+    [Tooltip("What the condition does to the player while it lasts.")]
+    public PlayerConditionEffects onPlayer = new PlayerConditionEffects();
 
-    [Tooltip("Unblockable damage dealt to the player each tick.")]
-    [Min(0)] public int playerDamagePerTick = 2;
-
-    [Tooltip("Added to an enemy's primary health bar each tick.")]
-    [Min(0f)] public float enemyDamagePerTick = 5f;
+    [Tooltip("What the condition does to an enemy while it lasts.")]
+    public EnemyConditionEffects onEnemy = new EnemyConditionEffects();
 }

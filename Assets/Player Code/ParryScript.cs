@@ -36,6 +36,7 @@ public class ParryScript : MonoBehaviour
 
     private PlayerAnimation playerAnimation;
     private SpriteRenderer spriteRenderer;
+    private PlayerStatusEffects status;
 
     private bool windowOpen;
     private float nextParryTime;
@@ -57,6 +58,7 @@ public class ParryScript : MonoBehaviour
     {
         playerAnimation = GetComponent<PlayerAnimation>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        status = GetComponent<PlayerStatusEffects>();
     }
 
     void OnDisable()
@@ -100,7 +102,10 @@ public class ParryScript : MonoBehaviour
 
         windowOpen = true;
 
-        yield return new WaitForSeconds(windowDuration);
+        // A status condition can shorten the window.
+        float windowMultiplier = status != null ? status.ParryWindowMultiplier : 1f;
+
+        yield return new WaitForSeconds(windowDuration * windowMultiplier);
 
         windowOpen = false;
         windowRoutine = null;

@@ -50,6 +50,7 @@ public class EnemyController : MonoBehaviour
     private EnemyRetreat retreat;
     private EnemyJumpAttack jumpAttack;
     private EnemyAttackToken token;
+    private EnemyStatusEffects status;
 
     private EnemyState state = EnemyState.Patrol;
 
@@ -84,6 +85,7 @@ public class EnemyController : MonoBehaviour
         retreat = GetComponent<EnemyRetreat>();
         jumpAttack = GetComponent<EnemyJumpAttack>();
         token = GetComponent<EnemyAttackToken>();
+        status = GetComponent<EnemyStatusEffects>();
     }
 
     void Update()
@@ -97,6 +99,10 @@ public class EnemyController : MonoBehaviour
             ChangeState(EnemyState.Dead);
         }
         else if (knockback != null && knockback.IsKnockedBack)
+        {
+            ChangeState(EnemyState.Stunned);
+        }
+        else if (status != null && status.IsStunned)
         {
             ChangeState(EnemyState.Stunned);
         }
@@ -368,6 +374,9 @@ public class EnemyController : MonoBehaviour
         if (jumpAttack == null || jump == null || movement.IsLaunched || !movement.IsGrounded())
             return false;
 
+        if (!jump.JumpAllowed)
+            return false;
+
         Vector2 targetGround = GetTargetGround();
 
         // Don't leap past the leash.
@@ -519,6 +528,9 @@ public class EnemyController : MonoBehaviour
         movement.Stop();
 
         if (knockback != null && knockback.IsKnockedBack)
+            return;
+
+        if (status != null && status.IsStunned)
             return;
 
         // Stun over — go straight back after the player if it's still around.

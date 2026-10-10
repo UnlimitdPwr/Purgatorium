@@ -7,6 +7,7 @@ public class PlayerHealth : MonoBehaviour
 
     private PlayerStats playerStats;
     private BlockScript block;
+    private PlayerStatusEffects status;
 
     public int CurrentHealth => currentHealth;
 
@@ -23,6 +24,7 @@ public class PlayerHealth : MonoBehaviour
     {
         playerStats = GetComponent<PlayerStats>();
         block = GetComponent<BlockScript>();
+        status = GetComponent<PlayerStatusEffects>();
 
         if (playerStats == null)
         {
@@ -107,6 +109,10 @@ public class PlayerHealth : MonoBehaviour
 
     public void Heal(int amount)
     {
+        // A status condition can reduce healing.
+        if (status != null)
+            amount = Mathf.RoundToInt(amount * status.HealingMultiplier);
+
         if (amount <= 0)
             return;
 

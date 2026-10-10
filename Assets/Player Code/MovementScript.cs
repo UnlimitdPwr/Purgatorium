@@ -32,6 +32,7 @@ public class MovementScript : MonoBehaviour
     private WallJumpScript wallJump;
     private LadderClimbScript ladderClimb;
     private HazardReceiver hazards;
+    private PlayerStatusEffects status;
     private float moveInput;
 
     // True from Jump() until the player stops rising — only our own jump can be
@@ -47,6 +48,7 @@ public class MovementScript : MonoBehaviour
         wallJump = GetComponent<WallJumpScript>();
         ladderClimb = GetComponent<LadderClimbScript>();
         hazards = GetComponent<HazardReceiver>();
+        status = GetComponent<PlayerStatusEffects>();
     }
 
     public void SetMoveInput(float input)
@@ -59,9 +61,13 @@ public class MovementScript : MonoBehaviour
         if (!IsGrounded())
             return;
 
+        // Jump height grows with the square of the launch speed, so a height
+        // multiplier becomes its square root here.
+        float heightMultiplier = status != null ? status.JumpHeightMultiplier : 1f;
+
         rb.linearVelocity = new Vector2(
             rb.linearVelocity.x,
-            jumpForce
+            jumpForce * Mathf.Sqrt(heightMultiplier)
         );
 
         jumpRising = true;
@@ -118,8 +124,13 @@ public class MovementScript : MonoBehaviour
         if (stamina != null)
             speedMultiplier *= stamina.SpeedMultiplier;
 
-        if (hazards != null)
-            speedMultiplier *= hazards.SpeedMultiplier;
+        // Hazard and status-condition slows don't stack — the strongest counts.
+        float slow = hazards != null ? hazards.SpeedMultiplier : 1f;
+
+        if (status != null)
+            slow = Mathf.Min(slow, status.MoveSpeedMultiplier);
+
+        speedMultiplier *= slow;
 
         rb.linearVelocity = new Vector2(
             moveInput * moveSpeed * speedMultiplier,

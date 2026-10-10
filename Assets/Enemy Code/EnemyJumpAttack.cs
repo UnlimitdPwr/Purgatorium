@@ -23,7 +23,11 @@ public class EnemyJumpAttack : MonoBehaviour
     [Header("Damage")]
     public int damage = 15;
 
-    [Tooltip("Status buildup the leap's hit adds to the player. Leave empty for none.")]
+    [Tooltip("How strongly the leap applies the enemy's own statuses (EnemyStatusOnHit). " +
+             "1 = as set there, 0 = none, 1.5 = a heavier dose.")]
+    [Min(0f)] public float statusMultiplier = 1f;
+
+    [Tooltip("Extra status buildup only the leap adds, on top of the enemy's own. Usually empty.")]
     public StatusInfliction[] statusOnHit = new StatusInfliction[0];
 
     [Header("When To Use It")]
@@ -89,6 +93,7 @@ public class EnemyJumpAttack : MonoBehaviour
     private EnemyTargeting targeting;
     private EnemyAnimation anim;
     private EnemyHitbox hitbox;
+    private EnemyStatusEffects status;
 
     private Phase phase = Phase.Idle;
     private float phaseTimer;
@@ -107,6 +112,7 @@ public class EnemyJumpAttack : MonoBehaviour
         detection = GetComponent<EnemyDetection>();
         targeting = GetComponent<EnemyTargeting>();
         anim = GetComponent<EnemyAnimation>();
+        status = GetComponent<EnemyStatusEffects>();
 
         hitbox = FindOrCreateHitbox();
     }
@@ -227,7 +233,12 @@ public class EnemyJumpAttack : MonoBehaviour
             if (movement.GetVerticalVelocity() <= 0f)
             {
                 passedApex = true;
-                hitbox.EnableHitbox(damage, statusOnHit);
+                // Status conditions can weaken the hit (weaker attacks).
+                int leapDamage = status != null
+                    ? Mathf.RoundToInt(damage * status.AttackDamageMultiplier)
+                    : damage;
+
+                hitbox.EnableHitbox(leapDamage, statusOnHit, statusMultiplier);
             }
         }
 

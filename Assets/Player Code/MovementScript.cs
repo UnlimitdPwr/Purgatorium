@@ -29,6 +29,8 @@ public class MovementScript : MonoBehaviour
     private DashScript dash;
     private PlayerStamina stamina;
     private PlayerKnockback knockback;
+    private WallJumpScript wallJump;
+    private LadderClimbScript ladderClimb;
     private float moveInput;
 
     // True from Jump() until the player stops rising — only our own jump can be
@@ -41,6 +43,8 @@ public class MovementScript : MonoBehaviour
         dash = GetComponent<DashScript>();
         stamina = GetComponent<PlayerStamina>();
         knockback = GetComponent<PlayerKnockback>();
+        wallJump = GetComponent<WallJumpScript>();
+        ladderClimb = GetComponent<LadderClimbScript>();
     }
 
     public void SetMoveInput(float input)
@@ -88,6 +92,17 @@ public class MovementScript : MonoBehaviour
 
         // Let a knockback impulse play out instead of overwriting it.
         if (knockback != null && knockback.IsKnockedBack)
+        {
+            jumpRising = false;
+            return;
+        }
+
+        // Same for the push away from a wall at the start of a wall jump.
+        if (wallJump != null && wallJump.IsWallJumping)
+            return;
+
+        // LadderClimbScript owns the Rigidbody while climbing.
+        if (ladderClimb != null && ladderClimb.IsClimbing)
         {
             jumpRising = false;
             return;

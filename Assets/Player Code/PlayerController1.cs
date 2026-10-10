@@ -9,6 +9,8 @@ public class PlayerController1 : MonoBehaviour
     private BlockScript block;
     private BonfirePlacement bonfirePlacement;
     private PlayerKnockback knockback;
+    private WallJumpScript wallJump;
+    private LadderClimbScript ladderClimb;
 
     private bool isResting;
 
@@ -23,6 +25,8 @@ public class PlayerController1 : MonoBehaviour
         block = GetComponent<BlockScript>();
         bonfirePlacement = GetComponent<BonfirePlacement>();
         knockback = GetComponent<PlayerKnockback>();
+        wallJump = GetComponent<WallJumpScript>();
+        ladderClimb = GetComponent<LadderClimbScript>();
     }
 
     void Update()
@@ -38,7 +42,9 @@ public class PlayerController1 : MonoBehaviour
             return;
 
         HandleMovement();
+        HandleLadderClimb();
         HandleJump();
+        HandleWallJump();
         HandleParry();
         HandleDash();
         HandleBlock();
@@ -85,6 +91,23 @@ public class PlayerController1 : MonoBehaviour
     }
 
     // =========================
+    // LADDER
+    // =========================
+
+    // Runs before HandleJump: jumping off a ladder replaces the normal jump
+    // (which then does nothing anyway, since the player isn't grounded).
+    void HandleLadderClimb()
+    {
+        if (ladderClimb == null)
+            return;
+
+        ladderClimb.SetClimbInput(playerInput.VerticalInput, playerInput.MoveInput);
+
+        if (playerInput.JumpPressed)
+            ladderClimb.TryJumpOff();
+    }
+
+    // =========================
     // JUMP
     // =========================
 
@@ -96,6 +119,21 @@ public class PlayerController1 : MonoBehaviour
         // Letting go early makes a shorter jump; holding gives the full height.
         if (playerInput.JumpReleased)
             movement.ReleaseJump();
+    }
+
+    // =========================
+    // WALL JUMP
+    // =========================
+
+    // Runs after HandleJump: on the ground the normal jump wins, and
+    // TryWallJump() does nothing because the player is still grounded.
+    void HandleWallJump()
+    {
+        if (wallJump == null)
+            return;
+
+        if (playerInput.JumpPressed)
+            wallJump.TryWallJump();
     }
 
     // =========================

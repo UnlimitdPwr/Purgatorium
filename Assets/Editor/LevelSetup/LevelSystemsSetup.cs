@@ -29,6 +29,7 @@ public static class LevelSystemsSetup
         changed |= AddToEnemies<EnemyJumpAttack>();
         changed |= AddToEnemies<EnemyAttackToken>();
         changed |= AddToEnemies<EnemyLoot>();
+        changed |= AddToEnemies<EnemyRespawn>();
 
         if (!changed)
         {

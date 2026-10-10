@@ -39,6 +39,9 @@ public class Bonfire : MonoBehaviour, IInteractable
             CheckpointManager.Instance.SetCheckpoint(this);
         }
 
+        // Resting brings every enemy back, fresh, where it was placed.
+        EnemyRespawn.RespawnAll();
+
         // Lock player movement and actions.
         PlayerController1 controller =
             interactor.GetComponent<PlayerController1>();

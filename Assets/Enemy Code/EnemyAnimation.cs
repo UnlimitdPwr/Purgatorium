@@ -12,12 +12,27 @@ public class EnemyAnimation : MonoBehaviour
 
     private const string JumpTrigger = "Jump";
     private const string RetreatTrigger = "Retreat";
+    private const string JumpAttackWindUpTrigger = "JumpAttackWindUp";
+    private const string JumpAttackTrigger = "JumpAttack";
+
+    [Header("Jump Attack Wind-up")]
+    [Tooltip("Pulse the sprite this colour while winding up a leap attack, so the player " +
+             "can see it coming. Works with or without a wind-up animation.")]
+    public bool flashDuringWindUp = true;
+
+    public Color windUpTint = new Color(1f, 0.45f, 0.45f);
+
+    [Tooltip("Pulses per second of the wind-up flash.")]
+    public float windUpFlashRate = 8f;
     private const string GroundedBool = "IsGrounded";
     private const string VerticalVelocityFloat = "VerticalVelocity";
 
     private Animator animator;
     private EnemyMovement movement;
     private SpriteRenderer spriteRenderer;
+
+    private Color baseColor = Color.white;
+    private float flashTimer;
 
     // Names of the parameters the Animator actually has.
     private readonly HashSet<string> parameters = new HashSet<string>();
@@ -27,6 +42,9 @@ public class EnemyAnimation : MonoBehaviour
         animator = GetComponent<Animator>();
         movement = GetComponent<EnemyMovement>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+
+        if (spriteRenderer != null)
+            baseColor = spriteRenderer.color;
 
         if (animator != null)
         {
@@ -40,6 +58,7 @@ public class EnemyAnimation : MonoBehaviour
         UpdateMovementAnimation();
         UpdateAirborneAnimation();
         UpdateFacingDirection();
+        UpdateWindUpFlash();
     }
 
     void UpdateMovementAnimation()
@@ -83,6 +102,31 @@ public class EnemyAnimation : MonoBehaviour
         SetOptionalTrigger(RetreatTrigger);
     }
 
+    // Leap attack wind-up: fires "JumpAttackWindUp" once that exists, and
+    // flashes the sprite for `duration` seconds either way.
+    public void PlayJumpAttackWindUp(float duration)
+    {
+        SetOptionalTrigger(JumpAttackWindUpTrigger);
+
+        if (flashDuringWindUp)
+            flashTimer = duration;
+    }
+
+    // The leap itself — fires "JumpAttack" once that exists.
+    public void PlayJumpAttack()
+    {
+        StopWindUpFlash();
+        SetOptionalTrigger(JumpAttackTrigger);
+    }
+
+    public void StopWindUpFlash()
+    {
+        flashTimer = 0f;
+
+        if (spriteRenderer != null)
+            spriteRenderer.color = baseColor;
+    }
+
     // Length in seconds of a clip on this enemy's Animator, or 0 if missing.
     public float GetClipLength(string clipName)
     {
@@ -101,6 +145,23 @@ public class EnemyAnimation : MonoBehaviour
     // =========================
     // INTERNAL
     // =========================
+
+    void UpdateWindUpFlash()
+    {
+        if (flashTimer <= 0f || spriteRenderer == null)
+            return;
+
+        flashTimer -= Time.deltaTime;
+
+        if (flashTimer <= 0f)
+        {
+            StopWindUpFlash();
+            return;
+        }
+
+        float pulse = Mathf.PingPong(Time.time * windUpFlashRate * 2f, 1f);
+        spriteRenderer.color = Color.Lerp(baseColor, windUpTint, pulse);
+    }
 
     void SetOptionalTrigger(string name)
     {

@@ -30,15 +30,19 @@ public class EnemyAttack : MonoBehaviour
     private const string AttackClipName = "Attack1";
     private const float FallbackSwingDuration = 0.6f;
 
+    [Tooltip("The sword swing's hitbox. Found among the children automatically if left " +
+             "empty (skipping the leap attack's JumpAttackHitbox).")]
+    [SerializeField] private EnemyHitbox hitbox;
+
     private EnemyAnimation anim;
     private EnemyMovement movement;
-    private EnemyHitbox hitbox;
 
     void Awake()
     {
         anim = GetComponent<EnemyAnimation>();
         movement = GetComponent<EnemyMovement>();
-        hitbox = GetComponentInChildren<EnemyHitbox>();
+        if (hitbox == null)
+            hitbox = FindSwingHitbox();
 
         if (hitbox == null)
             Debug.LogError("EnemyAttack: no EnemyHitbox found in children.", this);
@@ -126,6 +130,17 @@ public class EnemyAttack : MonoBehaviour
         bool verticalOverlap = target.max.y > reach.min.y && target.min.y < reach.max.y;
 
         return depth >= margin && notBehind && verticalOverlap;
+    }
+
+    EnemyHitbox FindSwingHitbox()
+    {
+        foreach (EnemyHitbox candidate in GetComponentsInChildren<EnemyHitbox>(true))
+        {
+            if (candidate.name != EnemyJumpAttack.HitboxName)
+                return candidate;
+        }
+
+        return null;
     }
 
     // =========================

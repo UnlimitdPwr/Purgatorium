@@ -121,6 +121,10 @@ public static class EnemyAttackSetup
 
         foreach (EnemyHitbox hitbox in Object.FindObjectsByType<EnemyHitbox>(FindObjectsInactive.Include))
         {
+            // The leap attack's hitbox is placed by EnemyJumpAttack, not here.
+            if (hitbox.name == EnemyJumpAttack.HitboxName)
+                continue;
+
             Transform hitboxTransform = hitbox.transform;
             Collider2D collider = hitbox.GetComponent<Collider2D>();
 

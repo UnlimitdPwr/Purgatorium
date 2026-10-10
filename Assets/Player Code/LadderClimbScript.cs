@@ -17,6 +17,10 @@ public class LadderClimbScript : MonoBehaviour
     [Range(0f, 1f)]
     [SerializeField] private float jumpOffMultiplier = 0.6f;
 
+    [Tooltip("Seconds after jumping off before the ladder can be grabbed again, " +
+             "so holding up while jumping off doesn't re-grab it instantly.")]
+    [SerializeField] private float regrabDelay = 0.3f;
+
     // =========================
     // STATE
     // =========================
@@ -32,6 +36,7 @@ public class LadderClimbScript : MonoBehaviour
     private Ladder currentLadder;
     private float climbInput;
     private float normalGravityScale;
+    private float regrabTimer;
 
     public bool IsClimbing { get; private set; }
 
@@ -83,7 +88,11 @@ public class LadderClimbScript : MonoBehaviour
             return;
         }
 
-        if (vertical == 0f || currentLadder == null || !currentLadder.IsUsable)
+        // Grab with up/down alone — not while running past.
+        if (vertical == 0f || horizontal != 0f || regrabTimer > 0f)
+            return;
+
+        if (currentLadder == null || !currentLadder.IsUsable)
             return;
 
         bool grounded = movement != null && movement.IsGrounded();
@@ -107,6 +116,7 @@ public class LadderClimbScript : MonoBehaviour
             return false;
 
         StopClimbing();
+        regrabTimer = regrabDelay;
 
         float jumpSpeed = movement != null ? movement.jumpForce * jumpOffMultiplier : 0f;
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpSpeed);
@@ -134,6 +144,12 @@ public class LadderClimbScript : MonoBehaviour
 
         IsClimbing = false;
         rb.gravityScale = normalGravityScale;
+    }
+
+    void Update()
+    {
+        if (regrabTimer > 0f)
+            regrabTimer -= Time.deltaTime;
     }
 
     void FixedUpdate()

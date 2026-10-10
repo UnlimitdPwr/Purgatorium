@@ -10,7 +10,8 @@ public enum EnemyState
     Stunned,  // knocked back (e.g. by a parry) — no AI until it wears off
     Dead,     // health ran out — does nothing
     Jump,     // in the air on a jump (onto a platform, over a gap, down a ledge)
-    Retreat   // hopping back after a combo, then a short pause
+    Retreat,  // hopping back after a combo, then a short pause
+    JumpAttack // winding up, leaping at the player, landing (EnemyJumpAttack runs it)
 }
 
 // Umbrella script for the enemy: runs the state machine and tells the other
@@ -47,6 +48,7 @@ public class EnemyController : MonoBehaviour
     private EnemyHealth health;
     private EnemyJump jump;
     private EnemyRetreat retreat;
+    private EnemyJumpAttack jumpAttack;
 
     private EnemyState state = EnemyState.Patrol;
 
@@ -79,6 +81,7 @@ public class EnemyController : MonoBehaviour
         health = GetComponent<EnemyHealth>();
         jump = GetComponent<EnemyJump>();
         retreat = GetComponent<EnemyRetreat>();
+        jumpAttack = GetComponent<EnemyJumpAttack>();
     }
 
     void Update()
@@ -110,6 +113,7 @@ public class EnemyController : MonoBehaviour
             case EnemyState.Dead:    movement.Stop(); break;
             case EnemyState.Jump:    UpdateJump();    break;
             case EnemyState.Retreat: UpdateRetreat(); break;
+            case EnemyState.JumpAttack: UpdateJumpAttack(); break;
         }
     }
 
@@ -156,6 +160,9 @@ public class EnemyController : MonoBehaviour
             ChangeState(EnemyState.Attack);
             return;
         }
+
+        if (TryStartJumpAttack())
+            return;
 
         float direction = targeting.GetHorizontalDirectionToTarget();
 
@@ -333,6 +340,40 @@ public class EnemyController : MonoBehaviour
         movement.Face(targeting.GetHorizontalDirectionToTarget());
 
         attack.Attack();
+    }
+
+    // =========================
+    // JUMP ATTACK
+    // =========================
+
+    // From a distance, sometimes leap at the player (EnemyJumpAttack decides
+    // how often and whether the leap can be made).
+    bool TryStartJumpAttack()
+    {
+        if (jumpAttack == null || jump == null || movement.IsLaunched || !movement.IsGrounded())
+            return false;
+
+        Vector2 targetGround = GetTargetGround();
+
+        // Don't leap past the leash.
+        if (patrol != null && Mathf.Abs(targetGround.x - patrol.HomeX) > leashDistance)
+            return false;
+
+        if (!jumpAttack.TryChooseLeap(targetGround))
+            return false;
+
+        ChangeState(EnemyState.JumpAttack);
+        jumpAttack.Begin();
+        return true;
+    }
+
+    // EnemyJumpAttack runs the wind-up, leap and landing; wait for it.
+    void UpdateJumpAttack()
+    {
+        if (jumpAttack != null && jumpAttack.IsBusy)
+            return;
+
+        ChangeState(RefreshTarget() ? EnemyState.Chase : EnemyState.Return);
     }
 
     // =========================
@@ -538,7 +579,8 @@ public class EnemyController : MonoBehaviour
 
     static bool IsAlertState(EnemyState s)
     {
-        return s == EnemyState.Chase || s == EnemyState.Attack || s == EnemyState.Jump || s == EnemyState.Retreat;
+        return s == EnemyState.Chase || s == EnemyState.Attack || s == EnemyState.Jump ||
+               s == EnemyState.Retreat || s == EnemyState.JumpAttack;
     }
 
     void ChangeState(EnemyState next)
@@ -558,6 +600,9 @@ public class EnemyController : MonoBehaviour
 
         if (previous == EnemyState.Retreat && retreat != null)
             retreat.Cancel();
+
+        if (previous == EnemyState.JumpAttack && jumpAttack != null)
+            jumpAttack.Cancel();
 
         // While after the player, keep track of them outside the sight cone.
         if (detection != null)

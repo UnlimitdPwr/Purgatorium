@@ -30,6 +30,13 @@ public class PlayerHealth : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
+        TakeDamage(damage, true);
+    }
+
+    // canBeBlocked = false is for damage a shield can't stop (e.g. acid) —
+    // it skips the block reduction and doesn't count as a blocked hit.
+    public void TakeDamage(int damage, bool canBeBlocked)
+    {
         if (damage <= 0)
             return;
 
@@ -40,7 +47,7 @@ public class PlayerHealth : MonoBehaviour
 
         int finalDamage = damage;
 
-        if (block != null && block.IsBlocking)
+        if (canBeBlocked && block != null && block.IsBlocking)
         {
             finalDamage = block.GetBlockedDamage(damage);
 

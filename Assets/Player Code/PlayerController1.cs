@@ -9,6 +9,7 @@ public class PlayerController1 : MonoBehaviour
     private BlockScript block;
     private BonfirePlacement bonfirePlacement;
     private PlayerKnockback knockback;
+    private WallJumpScript wallJump;
 
     private bool isResting;
 
@@ -23,6 +24,7 @@ public class PlayerController1 : MonoBehaviour
         block = GetComponent<BlockScript>();
         bonfirePlacement = GetComponent<BonfirePlacement>();
         knockback = GetComponent<PlayerKnockback>();
+        wallJump = GetComponent<WallJumpScript>();
     }
 
     void Update()
@@ -39,6 +41,7 @@ public class PlayerController1 : MonoBehaviour
 
         HandleMovement();
         HandleJump();
+        HandleWallJump();
         HandleParry();
         HandleDash();
         HandleBlock();
@@ -96,6 +99,21 @@ public class PlayerController1 : MonoBehaviour
         // Letting go early makes a shorter jump; holding gives the full height.
         if (playerInput.JumpReleased)
             movement.ReleaseJump();
+    }
+
+    // =========================
+    // WALL JUMP
+    // =========================
+
+    // Runs after HandleJump: on the ground the normal jump wins, and
+    // TryWallJump() does nothing because the player is still grounded.
+    void HandleWallJump()
+    {
+        if (wallJump == null)
+            return;
+
+        if (playerInput.JumpPressed)
+            wallJump.TryWallJump();
     }
 
     // =========================

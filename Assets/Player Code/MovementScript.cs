@@ -29,6 +29,7 @@ public class MovementScript : MonoBehaviour
     private DashScript dash;
     private PlayerStamina stamina;
     private PlayerKnockback knockback;
+    private WallJumpScript wallJump;
     private float moveInput;
 
     // True from Jump() until the player stops rising — only our own jump can be
@@ -41,6 +42,7 @@ public class MovementScript : MonoBehaviour
         dash = GetComponent<DashScript>();
         stamina = GetComponent<PlayerStamina>();
         knockback = GetComponent<PlayerKnockback>();
+        wallJump = GetComponent<WallJumpScript>();
     }
 
     public void SetMoveInput(float input)
@@ -92,6 +94,10 @@ public class MovementScript : MonoBehaviour
             jumpRising = false;
             return;
         }
+
+        // Same for the push away from a wall at the start of a wall jump.
+        if (wallJump != null && wallJump.IsWallJumping)
+            return;
 
         float speedMultiplier = 1f;
 

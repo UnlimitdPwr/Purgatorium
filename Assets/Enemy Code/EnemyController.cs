@@ -9,7 +9,8 @@ public enum EnemyState
     Return,   // lost the player or strayed too far — walking back home
     Stunned,  // knocked back (e.g. by a parry) — no AI until it wears off
     Dead,     // health ran out — does nothing
-    Jump      // in the air on a jump (onto a platform, over a gap, down a ledge)
+    Jump,     // in the air on a jump (onto a platform, over a gap, down a ledge)
+    Retreat   // hopping back after a combo, then a short pause
 }
 
 // Umbrella script for the enemy: runs the state machine and tells the other
@@ -45,6 +46,7 @@ public class EnemyController : MonoBehaviour
     private EnemyPatrol patrol;
     private EnemyHealth health;
     private EnemyJump jump;
+    private EnemyRetreat retreat;
 
     private EnemyState state = EnemyState.Patrol;
 
@@ -76,6 +78,7 @@ public class EnemyController : MonoBehaviour
         patrol = GetComponent<EnemyPatrol>();
         health = GetComponent<EnemyHealth>();
         jump = GetComponent<EnemyJump>();
+        retreat = GetComponent<EnemyRetreat>();
     }
 
     void Update()
@@ -106,6 +109,7 @@ public class EnemyController : MonoBehaviour
             case EnemyState.Stunned: UpdateStunned(); break;
             case EnemyState.Dead:    movement.Stop(); break;
             case EnemyState.Jump:    UpdateJump();    break;
+            case EnemyState.Retreat: UpdateRetreat(); break;
         }
     }
 
@@ -305,6 +309,19 @@ public class EnemyController : MonoBehaviour
             return;
         }
 
+        // Combo over: back off, or (sometimes) stand ground and go again
+        // once the cooldown is up.
+        if (attack.ComboFinished)
+        {
+            if (retreat != null && retreat.TryStartRetreat(movement.GetFacingDirection()))
+            {
+                ChangeState(EnemyState.Retreat);
+                return;
+            }
+
+            attack.BeginCombo();
+        }
+
         if (!IsTargetInAttackRange())
         {
             ChangeState(EnemyState.Chase);
@@ -316,6 +333,23 @@ public class EnemyController : MonoBehaviour
         movement.Face(targeting.GetHorizontalDirectionToTarget());
 
         attack.Attack();
+    }
+
+    // =========================
+    // RETREAT
+    // =========================
+
+    // Hopping back, then pausing (EnemyRetreat runs both). Comes straight
+    // back in afterwards.
+    void UpdateRetreat()
+    {
+        if (!movement.IsLaunched)
+            movement.Stop();
+
+        if (retreat != null && retreat.IsRetreating)
+            return;
+
+        ChangeState(RefreshTarget() ? EnemyState.Chase : EnemyState.Return);
     }
 
     // =========================
@@ -504,7 +538,7 @@ public class EnemyController : MonoBehaviour
 
     static bool IsAlertState(EnemyState s)
     {
-        return s == EnemyState.Chase || s == EnemyState.Attack || s == EnemyState.Jump;
+        return s == EnemyState.Chase || s == EnemyState.Attack || s == EnemyState.Jump || s == EnemyState.Retreat;
     }
 
     void ChangeState(EnemyState next)
@@ -517,6 +551,13 @@ public class EnemyController : MonoBehaviour
 
         // A jump-from spot belongs to whatever the enemy was doing before.
         hasApproachPoint = false;
+
+        // Every time the enemy closes in to attack, it throws a fresh combo.
+        if (next == EnemyState.Attack)
+            attack.BeginCombo();
+
+        if (previous == EnemyState.Retreat && retreat != null)
+            retreat.Cancel();
 
         // While after the player, keep track of them outside the sight cone.
         if (detection != null)

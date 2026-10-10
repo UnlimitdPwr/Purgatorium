@@ -16,6 +16,12 @@ public abstract class StatusEffectsBase : MonoBehaviour, IStatusReceiver
              "2 = twice as fast. Stacks with the per-status resistances below.")]
     [SerializeField, Min(0f)] private float buildupRate = 1f;
 
+    [Header("Recovery Rate")]
+    [Tooltip("How fast this character clears statuses: buildup receding before the threshold, " +
+             "and active conditions wearing off. 1 = normal, 2 = twice as fast, 0.5 = half. " +
+             "(Enemies' buildup never recedes — for them this only shortens conditions.)")]
+    [SerializeField, Min(0.01f)] private float recoveryRate = 1f;
+
     [Header("Resistances")]
     [Tooltip("Per-status buildup multipliers. Statuses not listed take normal buildup (x1).")]
     [SerializeField] private List<StatusResistance> resistances = new List<StatusResistance>();
@@ -103,7 +109,7 @@ public abstract class StatusEffectsBase : MonoBehaviour, IStatusReceiver
             if (meter.IsConditionActive)
                 ConditionUpdate(meter, Time.deltaTime);
 
-            if (meter.Tick(Time.deltaTime))
+            if (meter.Tick(Time.deltaTime, recoveryRate, BuildupRecedes))
                 EndCondition(meter);
         }
     }
@@ -135,6 +141,11 @@ public abstract class StatusEffectsBase : MonoBehaviour, IStatusReceiver
     // False while the character is dead — meters freeze and ignore exposure.
     protected abstract bool CanBeAffected();
 
+    // Whether buildup below the threshold recedes when exposure stops.
+    // The player's does; enemies override this (theirs only clears through
+    // a full condition).
+    protected virtual bool BuildupRecedes => true;
+
     // =========================
     // RESISTANCES
     // =========================
@@ -157,6 +168,7 @@ public abstract class StatusEffectsBase : MonoBehaviour, IStatusReceiver
     }
 
     public float BuildupRate => buildupRate;
+    public float RecoveryRate => recoveryRate;
 
     protected virtual void ConditionStarted(StatusMeter meter) { }
     protected abstract void ConditionUpdate(StatusMeter meter, float deltaTime);

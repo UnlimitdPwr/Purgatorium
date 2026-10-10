@@ -2,7 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // An enemy's (hidden) status buildups. Works like the player's (buildup
-// rate and resistances live in StatusEffectsBase); once a condition starts,
+// rate, recovery rate and resistances live in StatusEffectsBase), except
+// buildup never recedes on its own; once a condition starts,
 // the effects ticked under "On Enemy" in its settings asset apply until the
 // bar drains back to 0. Damage goes to the PRIMARY health bar — status
 // conditions are how the player actually wears enemies down.
@@ -33,6 +34,10 @@ public class EnemyStatusEffects : StatusEffectsBase
     {
         return !health.IsDead;
     }
+
+    // Enemy buildup never recedes — it only clears through a full condition,
+    // so partial buildup from earlier in a fight still counts.
+    protected override bool BuildupRecedes => false;
 
     protected override void Update()
     {

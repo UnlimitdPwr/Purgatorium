@@ -48,12 +48,14 @@ public class StatusMeter
     // =========================
 
     // Advances the meter: recedes buildup, or drains an active condition.
+    // recoveryRate speeds both up (2 = twice as fast); recedes = false keeps
+    // buildup below the threshold from receding at all (enemies).
     // Returns true on the frame the condition wears off.
-    public bool Tick(float deltaTime)
+    public bool Tick(float deltaTime, float recoveryRate, bool recedes)
     {
         if (IsConditionActive)
         {
-            float drainPerSecond = Definition.threshold / Definition.conditionDuration;
+            float drainPerSecond = Definition.threshold / Definition.conditionDuration * recoveryRate;
             Buildup = Mathf.Max(0f, Buildup - drainPerSecond * deltaTime);
 
             if (Buildup > 0f)
@@ -63,13 +65,13 @@ public class StatusMeter
             return true;
         }
 
-        if (Buildup <= 0f)
+        if (Buildup <= 0f || !recedes)
             return false;
 
         timeSinceExposure += deltaTime;
 
         if (timeSinceExposure >= Definition.recedeDelay)
-            Buildup = Mathf.Max(0f, Buildup - Definition.recedeRate * deltaTime);
+            Buildup = Mathf.Max(0f, Buildup - Definition.recedeRate * recoveryRate * deltaTime);
 
         return false;
     }

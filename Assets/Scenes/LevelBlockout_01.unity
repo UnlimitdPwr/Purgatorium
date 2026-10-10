@@ -5038,7 +5038,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54e28cd5121004db0a03424f4dfbe52a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnvironmentalHazard
-  hazardType: {fileID: 11400000, guid: 24ad4cf6b594d4878a6c23804d1e0328, type: 2}
+  hazardType: {fileID: 11400000, guid: 4cd6fa3e266244102bf9d50d37f491ac, type: 2}
   size: {x: 26, y: 0.65}
 --- !u!61 &571909583
 BoxCollider2D:
@@ -5136,7 +5136,7 @@ SpriteRenderer:
   m_SortingOrder: -10
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0.35, g: 0.95, b: 0.2, a: 0.6}
+  m_Color: {r: 1, g: 0.35, b: 0.05, a: 0.85}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 1
@@ -19784,7 +19784,7 @@ Transform:
   m_GameObject: {fileID: 1778876709}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 27.24, y: -0.5, z: 0}
+  m_LocalPosition: {x: 45.81, y: 1.7, z: 0}
   m_LocalScale: {x: 2.7552, y: 2.5959, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

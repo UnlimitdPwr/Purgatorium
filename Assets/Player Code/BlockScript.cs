@@ -6,6 +6,11 @@ public class BlockScript : MonoBehaviour
     [SerializeField, Range(0f, 1f)]
     private float blockDamageReduction = 0.6f;
 
+    [Tooltip("Share of an attack's status buildup that blocking stops. " +
+             "0 = blocking doesn't help, 1 = blocked hits add no buildup. (Parries always stop all of it.)")]
+    [SerializeField, Range(0f, 1f)]
+    private float blockStatusReduction = 0.5f;
+
     private bool isBlocking;
     private PlayerAnimation playerAnimation;
 
@@ -70,5 +75,13 @@ public class BlockScript : MonoBehaviour
         );
 
         return Mathf.Max(0, blockedDamage);
+    }
+
+    public float GetBlockedStatusBuildup(float incomingBuildup)
+    {
+        if (incomingBuildup <= 0f)
+            return 0f;
+
+        return incomingBuildup * (1f - blockStatusReduction);
     }
 }

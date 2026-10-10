@@ -158,9 +158,14 @@ public class EnemyHitbox : MonoBehaviour
 
         Debug.Log("PLAYER HIT! Applying " + damage + " damage.");
 
+        // Checked before TakeDamage, which reduces the damage itself.
+        BlockScript block = other.GetComponentInParent<BlockScript>();
+        bool blocked = block != null && block.IsBlocking;
+
         playerHealth.TakeDamage(damage);
 
-        // Status buildup rides on the hit (a parried hit never gets here).
+        // Status buildup rides on the hit. A parried hit never gets here, so
+        // parrying stops all of it; blocking stops part of it.
         if (statusOnHit != null && statusOnHit.Length > 0)
         {
             IStatusReceiver receiver = other.GetComponentInParent<IStatusReceiver>();
@@ -168,7 +173,13 @@ public class EnemyHitbox : MonoBehaviour
             if (receiver != null)
             {
                 foreach (StatusInfliction infliction in statusOnHit)
-                    receiver.AddBuildup(infliction.status, infliction.buildup);
+                {
+                    float buildup = blocked
+                        ? block.GetBlockedStatusBuildup(infliction.buildup)
+                        : infliction.buildup;
+
+                    receiver.AddBuildup(infliction.status, buildup);
+                }
             }
         }
 

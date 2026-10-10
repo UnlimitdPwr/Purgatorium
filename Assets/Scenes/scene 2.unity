@@ -1385,6 +1385,8 @@ GameObject:
   - component: {fileID: 1902844977}
   - component: {fileID: 1902844976}
   - component: {fileID: 1902844975}
+  - component: {fileID: 1902844980}
+  - component: {fileID: 1902844979}
   m_Layer: 0
   m_Name: 'Enemy '
   m_TagString: Untagged
@@ -1801,6 +1803,31 @@ MonoBehaviour:
   dropHopHeight: 0.3
   jumpCooldown: 0.4
   searchInterval: 0.2
+--- !u!114 &1902844979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1902844959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e1ce354bd6fe4163badc21a2a8cc0b3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyRespawn
+--- !u!114 &1902844980
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1902844959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc256f50712cb415182d9cfb0b96fc31, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyLoot
+  essenceReward: 25
 --- !u!1 &2015870002
 GameObject:
   m_ObjectHideFlags: 0

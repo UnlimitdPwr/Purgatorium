@@ -797,6 +797,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7fa0ae576cef246a1a6f1945ebafd154, type: 2}
   - {fileID: 11400000, guid: 0f38ac82577db498ea3dc7b44b6a134f, type: 2}
   - {fileID: 11400000, guid: 5e64fe9a4682a44b98654465244cd557, type: 2}
+  buildupRate: 1
+  resistances: []
   debugStatus: 0
   debugAmount: 10
 --- !u!114 &537789744
@@ -1447,6 +1449,7 @@ GameObject:
   - component: {fileID: 1902844979}
   - component: {fileID: 1902844981}
   - component: {fileID: 1902844982}
+  - component: {fileID: 1902844983}
   m_Layer: 0
   m_Name: 'Enemy '
   m_TagString: Untagged
@@ -1567,6 +1570,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   damage: 20
+  statusMultiplier: 1
   statusOnHit: []
   attackCooldown: 1
   minComboSwings: 1
@@ -1608,6 +1612,7 @@ MonoBehaviour:
     m_Bits: 256
   edgeLookAhead: 0.15
   ledgeCheckDepth: 1
+  avoidHazards: 1
 --- !u!114 &1902844969
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1810,6 +1815,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyJumpAttack
   damage: 15
+  statusMultiplier: 1
   statusOnHit: []
   minRange: 2.5
   maxRange: 5
@@ -1906,9 +1912,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7fa0ae576cef246a1a6f1945ebafd154, type: 2}
   - {fileID: 11400000, guid: 0f38ac82577db498ea3dc7b44b6a134f, type: 2}
   - {fileID: 11400000, guid: 5e64fe9a4682a44b98654465244cd557, type: 2}
+  buildupRate: 1
+  resistances: []
   debugStatus: 0
   debugAmount: 10
-  resistances: []
 --- !u!114 &1902844982
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1921,6 +1928,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 70b3910a084284208a877ecc81910603, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HazardReceiver
+--- !u!114 &1902844983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1902844959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a19e967081a66466882af208e88d67ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyStatusOnHit
+  inflictions: []
 --- !u!1 &2015870002
 GameObject:
   m_ObjectHideFlags: 0

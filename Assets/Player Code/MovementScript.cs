@@ -31,6 +31,7 @@ public class MovementScript : MonoBehaviour
     private PlayerKnockback knockback;
     private WallJumpScript wallJump;
     private LadderClimbScript ladderClimb;
+    private HazardReceiver hazards;
     private float moveInput;
 
     // True from Jump() until the player stops rising — only our own jump can be
@@ -45,6 +46,7 @@ public class MovementScript : MonoBehaviour
         knockback = GetComponent<PlayerKnockback>();
         wallJump = GetComponent<WallJumpScript>();
         ladderClimb = GetComponent<LadderClimbScript>();
+        hazards = GetComponent<HazardReceiver>();
     }
 
     public void SetMoveInput(float input)
@@ -115,6 +117,9 @@ public class MovementScript : MonoBehaviour
 
         if (stamina != null)
             speedMultiplier *= stamina.SpeedMultiplier;
+
+        if (hazards != null)
+            speedMultiplier *= hazards.SpeedMultiplier;
 
         rb.linearVelocity = new Vector2(
             moveInput * moveSpeed * speedMultiplier,

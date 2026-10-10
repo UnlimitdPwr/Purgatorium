@@ -57,6 +57,12 @@ public class EnemyHealth : MonoBehaviour
         AddPrimary(amount);
     }
 
+    // Called by HazardReceiver each tick the enemy stands in a damaging hazard.
+    public void ApplyHazardDamage(float amount)
+    {
+        AddPrimary(amount);
+    }
+
     // =========================
     // INTERNAL
     // =========================

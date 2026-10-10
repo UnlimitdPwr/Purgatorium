@@ -39,7 +39,6 @@ public static class LevelBlockout01Builder
     static readonly Color SolidColor = new Color(0.45f, 0.45f, 0.5f);
     static readonly Color CrumbleColor = new Color(0.9f, 0.55f, 0.2f);
     static readonly Color BreakableColor = new Color(0.55f, 0.33f, 0.18f);
-    static readonly Color AcidColor = new Color(0.35f, 0.95f, 0.2f, 0.6f);
     static readonly Color GateColor = new Color(0.75f, 0.2f, 0.2f);
     static readonly Color WallJumpColor = new Color(0.3f, 0.5f, 0.9f);
     static readonly Color LadderColor = new Color(0.95f, 0.8f, 0.3f, 0.8f);
@@ -227,7 +226,7 @@ public static class LevelBlockout01Builder
         // ---------- Acid run: platforms over an acid pool ----------
         t = Group(level, "2 Acid Run");
         Solid(t, "Acid Pool Bottom", 32.7f, -2f, 58.7f, -1f);
-        Acid(t, "Acid", 32.7f, -1f, 58.7f, -0.35f);
+        Hazard(t, "Acid", "Acid", 32.7f, -1f, 58.7f, -0.35f);
         Platform(t, "Acid Platform A", 32.7f, 49.3f, 2.1f);
         Marker(t, "Enemy", 46f, 2.1f, EnemyMarker);
         Platform(t, "Acid Platform B", 51.8f, 57f, 2.1f);
@@ -441,10 +440,18 @@ public static class LevelBlockout01Builder
         go.AddComponent<WallJumpSurface>();
     }
 
-    static void Acid(Transform parent, string name, float x1, float y1, float x2, float y2)
+    // Look and behaviour come from the HazardType asset (Assets/Level Code/Hazards/Types).
+    static void Hazard(Transform parent, string name, string typeName, float x1, float y1, float x2, float y2)
     {
-        GameObject go = Box(parent, name, x1, y1, x2, y2, AcidColor, false);
-        go.AddComponent<AcidPool>();
+        HazardType type = HazardSetup.EnsureHazardType(typeName);
+
+        GameObject go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        go.transform.position = new Vector3((x1 + x2) * 0.5f, (y1 + y2) * 0.5f, 0f);
+
+        AddSprite(go, Color.white);
+        go.AddComponent<BoxCollider2D>().isTrigger = true;
+        go.AddComponent<EnvironmentalHazard>().Configure(type, new Vector2(x2 - x1, y2 - y1));
     }
 
     static LevelGate Gate(Transform parent, string name, float x1, float y1, float x2, float y2, bool startsOpen)

@@ -29,6 +29,7 @@ public class EnemyMovement : MonoBehaviour
     private Rigidbody2D rb;
     private Collider2D body;
     private EnemyKnockback knockback;
+    private HazardReceiver hazards;
     private float moveDirection;
 
     // True while a jump/hop launched by Launch() is in the air. Movement
@@ -49,6 +50,7 @@ public class EnemyMovement : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         body = GetComponent<Collider2D>();
         knockback = GetComponent<EnemyKnockback>();
+        hazards = GetComponent<HazardReceiver>();
     }
 
     void FixedUpdate()
@@ -73,8 +75,10 @@ public class EnemyMovement : MonoBehaviour
             launched = false;
         }
 
+        float speed = hazards != null ? moveSpeed * hazards.SpeedMultiplier : moveSpeed;
+
         rb.linearVelocity = new Vector2(
-            moveDirection * moveSpeed,
+            moveDirection * speed,
             rb.linearVelocity.y
         );
     }

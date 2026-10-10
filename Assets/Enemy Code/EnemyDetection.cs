@@ -37,6 +37,7 @@ public class EnemyDetection : MonoBehaviour
 
     private Transform player;
     private Collider2D playerCollider;
+    private PlayerDeath playerDeath;
     private Collider2D body;
     private EnemyMovement movement;
 
@@ -69,6 +70,14 @@ public class EnemyDetection : MonoBehaviour
         if (player == null)
             return false;
 
+        // A dead player is invisible: the enemy forgets them and goes back
+        // to patrolling.
+        if (IsPlayerDead())
+        {
+            lastSensedTime = float.NegativeInfinity;
+            return false;
+        }
+
         bool sensed = CanHearPlayer() || CanSeePlayer();
 
         if (sensed)
@@ -95,6 +104,11 @@ public class EnemyDetection : MonoBehaviour
         return null;
     }
 
+    public bool IsPlayerDead()
+    {
+        return playerDeath != null && playerDeath.IsDead;
+    }
+
     // EnemyController sets this while the enemy is fighting the player.
     public void SetAlerted(bool value)
     {
@@ -105,7 +119,7 @@ public class EnemyDetection : MonoBehaviour
     // nothing in the way (not heard, remembered or tracked).
     public bool CanSeePlayerNow()
     {
-        if (player == null)
+        if (player == null || IsPlayerDead())
             return false;
 
         bool wasAlerted = alerted;
@@ -179,6 +193,7 @@ public class EnemyDetection : MonoBehaviour
 
         player = playerObject.transform;
         playerCollider = playerObject.GetComponent<Collider2D>();
+        playerDeath = playerObject.GetComponent<PlayerDeath>();
     }
 
     // =========================

@@ -11,6 +11,15 @@ public abstract class StatusEffectsBase : MonoBehaviour, IStatusReceiver
              "Tools > Status Effects > Set Up Status Effects In Open Scene after adding a status.")]
     [SerializeField] private StatusEffectDefinition[] statusEffects = new StatusEffectDefinition[0];
 
+    [Header("Buildup Rate")]
+    [Tooltip("How fast this character builds up EVERY status. 1 = normal, 0.5 = half as fast, " +
+             "2 = twice as fast. Stacks with the per-status resistances below.")]
+    [SerializeField, Min(0f)] private float buildupRate = 1f;
+
+    [Header("Resistances")]
+    [Tooltip("Per-status buildup multipliers. Statuses not listed take normal buildup (x1).")]
+    [SerializeField] private List<StatusResistance> resistances = new List<StatusResistance>();
+
     [Header("Debug")]
     [Tooltip("Used by the 'Debug: Add Buildup' right-click menu on this component.")]
     [SerializeField] private StatusType debugStatus = StatusType.Poison;
@@ -128,8 +137,28 @@ public abstract class StatusEffectsBase : MonoBehaviour, IStatusReceiver
     // False while the character is dead — meters freeze and ignore exposure.
     protected abstract bool CanBeAffected();
 
-    // Lets enemies apply resistances / weaknesses. Default: unchanged.
-    protected virtual float ScaleBuildup(StatusType type, float amount) => amount;
+    // =========================
+    // RESISTANCES
+    // =========================
+
+    float ScaleBuildup(StatusType type, float amount)
+    {
+        return amount * buildupRate * GetBuildupMultiplier(type);
+    }
+
+    // The per-status multiplier from the resistance list (1 if not listed).
+    public float GetBuildupMultiplier(StatusType type)
+    {
+        foreach (StatusResistance resistance in resistances)
+        {
+            if (resistance.status == type)
+                return resistance.buildupMultiplier;
+        }
+
+        return 1f;
+    }
+
+    public float BuildupRate => buildupRate;
 
     protected virtual void ConditionStarted(StatusMeter meter) { }
     protected abstract void ConditionTick(StatusMeter meter);

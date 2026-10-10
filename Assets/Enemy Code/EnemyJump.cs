@@ -73,6 +73,9 @@ public class EnemyJump : MonoBehaviour
     // Surfaces closer than this in height count as "the same level".
     private const float SameLevel = 0.3f;
 
+    // How close the enemy has to get to a jump-from spot to count as there.
+    public const float ApproachTolerance = 0.15f;
+
     private readonly List<Candidate> candidates = new List<Candidate>();
 
     private struct Candidate
@@ -288,7 +291,13 @@ public class EnemyJump : MonoBehaviour
                 if (Mathf.Abs(standY - feet.y) > SameLevel)
                     continue;
 
-                if (TryPlan(new Vector2(x, standY), target, resolvedJumpHeight, ledgeClearance, MaxAirSpeed, out _))
+                // The enemy stops anywhere within ApproachTolerance of the
+                // spot, so the jump has to work from the whole range — a spot
+                // that only just clears the platform's corner from its exact
+                // x would leave the enemy stuck a hair short of it.
+                if (TryPlan(new Vector2(x, standY), target, resolvedJumpHeight, ledgeClearance, MaxAirSpeed, out _) &&
+                    TryPlan(new Vector2(x - outward * ApproachTolerance, standY), target, resolvedJumpHeight, ledgeClearance, MaxAirSpeed, out _) &&
+                    TryPlan(new Vector2(x + outward * ApproachTolerance, standY), target, resolvedJumpHeight, ledgeClearance, MaxAirSpeed, out _))
                 {
                     approachX = x;
                     landing = target;

@@ -229,7 +229,7 @@ public class EnemyController : MonoBehaviour
         {
             float toApproach = approachX - feet.x;
 
-            if (Mathf.Abs(toApproach) > 0.15f)
+            if (Mathf.Abs(toApproach) > EnemyJump.ApproachTolerance)
             {
                 Walk(Mathf.Sign(toApproach));
                 return true;
@@ -307,7 +307,7 @@ public class EnemyController : MonoBehaviour
     {
         Vector2 targetFeet = targeting.GetTargetFeetPosition();
 
-        if (jump.TryGetSurface(targetFeet + new Vector2(0f, 0.1f), 20f, out float groundY))
+        if (jump != null && jump.TryGetSurface(targetFeet + new Vector2(0f, 0.1f), 20f, out float groundY))
             return new Vector2(targetFeet.x, groundY);
 
         return targetFeet;

@@ -3,7 +3,6 @@ using UnityEngine;
 public class EnemyMovement : MonoBehaviour
 {
     public float moveSpeed = 3f;
-    public float jumpForce = 10f;
 
     // =========================
     // GROUND CHECK
@@ -32,6 +31,15 @@ public class EnemyMovement : MonoBehaviour
     private EnemyKnockback knockback;
     private float moveDirection;
 
+    // True while a jump/hop launched by Launch() is in the air. Movement
+    // leaves the Rigidbody alone until it lands, so the arc isn't flattened.
+    private bool launched;
+    private float launchTime;
+
+    // Launch happens with the feet still touching the ground — ignore the
+    // ground check for this long so the jump doesn't "land" instantly.
+    private const float MinAirTime = 0.1f;
+
     // 1 = facing right, -1 = facing left. The sprite art faces right, so this
     // starts at 1. Movement updates it; Face() sets it without moving.
     private float facingDirection = 1f;
@@ -47,7 +55,23 @@ public class EnemyMovement : MonoBehaviour
     {
         // Knockback owns the Rigidbody while it is active — don't overwrite the impulse.
         if (knockback != null && knockback.IsKnockedBack)
+        {
+            launched = false;
             return;
+        }
+
+        // Mid-jump: let the launch velocity carry the enemy until it lands.
+        if (launched)
+        {
+            bool landed = Time.time - launchTime >= MinAirTime
+                          && rb.linearVelocity.y <= 0.01f
+                          && IsGrounded();
+
+            if (!landed)
+                return;
+
+            launched = false;
+        }
 
         rb.linearVelocity = new Vector2(
             moveDirection * moveSpeed,
@@ -84,16 +108,20 @@ public class EnemyMovement : MonoBehaviour
     // JUMP
     // =========================
 
-    public void Jump()
+    // Sets the enemy flying with this velocity (a jump, hop or leap — see
+    // EnemyJump for how the velocity is worked out). Doesn't change facing,
+    // so a hop backwards keeps the enemy looking at the player.
+    public void Launch(Vector2 velocity)
     {
-        if (!IsGrounded())
-            return;
+        moveDirection = 0f;
+        rb.linearVelocity = velocity;
 
-        rb.linearVelocity = new Vector2(
-            rb.linearVelocity.x,
-            jumpForce
-        );
+        launched = true;
+        launchTime = Time.time;
     }
+
+    // True from Launch() until the enemy lands (or is knocked out of it).
+    public bool IsLaunched => launched;
 
     // =========================
     // GROUND CHECK
@@ -101,9 +129,25 @@ public class EnemyMovement : MonoBehaviour
 
     public bool IsGrounded()
     {
-        return Physics2D.OverlapCircle(
-            groundCheck.position,
-            groundCheckRadius,
+        if (groundCheck != null)
+        {
+            return Physics2D.OverlapCircle(
+                groundCheck.position,
+                groundCheckRadius,
+                groundLayer
+            );
+        }
+
+        // No GroundCheck child — test a thin strip under the body instead.
+        if (body == null)
+            return false;
+
+        Bounds bounds = body.bounds;
+
+        return Physics2D.OverlapBox(
+            new Vector2(bounds.center.x, bounds.min.y),
+            new Vector2(bounds.size.x * 0.9f, groundCheckRadius * 2f),
+            0f,
             groundLayer
         );
     }
@@ -117,28 +161,44 @@ public class EnemyMovement : MonoBehaviour
     // stop at the edge instead of falling off it.
     public bool CanMove(float direction)
     {
+        return !IsLedgeAhead(direction) && !IsWallAhead(direction);
+    }
+
+    // True when there's no ground just in front of the feet.
+    public bool IsLedgeAhead(float direction)
+    {
         if (direction == 0f || body == null)
-            return true;
+            return false;
 
         float sign = Mathf.Sign(direction);
         Bounds bounds = body.bounds;
 
-        // Ledge: is there ground just in front of the feet?
         Vector2 ledgeProbe = new Vector2(
             bounds.center.x + sign * (bounds.extents.x + edgeLookAhead),
             bounds.min.y + 0.05f
         );
 
-        if (!Physics2D.Raycast(ledgeProbe, Vector2.down, ledgeCheckDepth, groundLayer))
+        return !Physics2D.Raycast(ledgeProbe, Vector2.down, ledgeCheckDepth, groundLayer);
+    }
+
+    // True when something solid is right in front of the body — anywhere
+    // from just above the feet to the top of the head, so a knee-high step
+    // or a low overhang counts as well as a full wall.
+    public bool IsWallAhead(float direction)
+    {
+        if (direction == 0f || body == null)
             return false;
 
-        // Wall: is something solid right in front of the body?
-        Vector2 wallProbe = new Vector2(bounds.center.x, bounds.center.y);
+        float sign = Mathf.Sign(direction);
+        Bounds bounds = body.bounds;
 
-        if (Physics2D.Raycast(wallProbe, new Vector2(sign, 0f), bounds.extents.x + edgeLookAhead, groundLayer))
-            return false;
+        // Thin box the height of the body, minus a little at the feet so the
+        // floor itself isn't counted.
+        const float footClearance = 0.1f;
+        Vector2 size = new Vector2(0.05f, Mathf.Max(0.05f, bounds.size.y - footClearance - 0.02f));
+        Vector2 origin = new Vector2(bounds.center.x, bounds.min.y + footClearance + size.y * 0.5f);
 
-        return true;
+        return Physics2D.BoxCast(origin, size, 0f, new Vector2(sign, 0f), bounds.extents.x + edgeLookAhead, groundLayer);
     }
 
     // =========================
@@ -158,6 +218,13 @@ public class EnemyMovement : MonoBehaviour
 
         Bounds bounds = body.bounds;
         return new Vector2(bounds.center.x, bounds.min.y);
+    }
+
+    // The enemy's body collider (null if it has none). EnemyJump sizes its
+    // landing and arc checks from this.
+    public Collider2D GetBody()
+    {
+        return body;
     }
 
     public float GetFacingDirection()

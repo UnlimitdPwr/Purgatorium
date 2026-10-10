@@ -16,7 +16,8 @@ public class HazardType : ScriptableObject
     [Tooltip("Colour multiplied over the sprite (alpha = see-through).")]
     public Color tint = Color.white;
 
-    [Tooltip("On: the sprite repeats across the area. Off: one copy stretched to fit.")]
+    [Tooltip("On: the sprite repeats across the area. Off: one copy stretched to fit. " +
+             "Tiling needs the sprite's import setting Mesh Type = Full Rect.")]
     public bool tileSprite = true;
 
     [Header("Damage Over Time")]

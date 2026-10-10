@@ -64,10 +64,12 @@ public class EnvironmentalHazard : MonoBehaviour
         box.size = size;
         box.offset = Vector2.zero;
 
+        // Only real textures tile; a plain coloured box just stretches
+        // (tiling it would only trigger Unity's "not Full Rect" warning).
+        bool tile = hazardType != null && hazardType.sprite != null && hazardType.tileSprite;
+
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
-        sr.drawMode = hazardType != null && !hazardType.tileSprite
-            ? SpriteDrawMode.Sliced
-            : SpriteDrawMode.Tiled;
+        sr.drawMode = tile ? SpriteDrawMode.Tiled : SpriteDrawMode.Sliced;
         sr.size = size;
 
         if (hazardType == null)

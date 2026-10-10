@@ -564,6 +564,61 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
+--- !u!1 &51409687
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 51409688}
+  - component: {fileID: 51409689}
+  m_Layer: 5
+  m_Name: PlayerStatusBars
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &51409688
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 51409687}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1774931490}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -482.4087, y: 129.181}
+  m_SizeDelta: {x: 300, y: 50}
+  m_Pivot: {x: 0, y: 1}
+--- !u!114 &51409689
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 51409687}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9075900458d04be4996aeb4a15b1c1f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStatusBars
+  playerStatus: {fileID: 2003877438}
+  barWidth: 150
+  barHeight: 8
+  spacing: 4
+  labelFontSize: 12
+  backgroundColor: {r: 0, g: 0, b: 0, a: 0.6}
+  conditionPulseSpeed: 3
 --- !u!1 &54545575
 GameObject:
   m_ObjectHideFlags: 0
@@ -19047,6 +19102,7 @@ RectTransform:
   m_Children:
   - {fileID: 1910917892}
   - {fileID: 1797001574}
+  - {fileID: 51409688}
   - {fileID: 61242802}
   m_Father: {fileID: 2002682918}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -19096,6 +19152,7 @@ GameObject:
   - component: {fileID: 1778876727}
   - component: {fileID: 1778876726}
   - component: {fileID: 1778876725}
+  - component: {fileID: 1778876731}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -19148,7 +19205,6 @@ MonoBehaviour:
   secondaryThreshold: 100
   parryPrimaryAmount: 10
   parrySecondaryAmount: 20
-  statusEffectAmount: 10
 --- !u!114 &1778876713
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19537,6 +19593,26 @@ MonoBehaviour:
   dropHopHeight: 0.3
   jumpCooldown: 0.4
   searchInterval: 0.2
+--- !u!114 &1778876731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778876709}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00a68ba5bcbbc4f0a9714ab9444833a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyStatusEffects
+  statusEffects:
+  - {fileID: 11400000, guid: bed1883ee13ee4fd3a328f075241b90c, type: 2}
+  - {fileID: 11400000, guid: 7fa0ae576cef246a1a6f1945ebafd154, type: 2}
+  - {fileID: 11400000, guid: 0f38ac82577db498ea3dc7b44b6a134f, type: 2}
+  - {fileID: 11400000, guid: 5e64fe9a4682a44b98654465244cd557, type: 2}
+  debugStatus: 0
+  debugAmount: 10
+  resistances: []
 --- !u!1 &1781525075
 GameObject:
   m_ObjectHideFlags: 0
@@ -21797,6 +21873,7 @@ GameObject:
   - component: {fileID: 2003877434}
   - component: {fileID: 2003877437}
   - component: {fileID: 2003877436}
+  - component: {fileID: 2003877438}
   m_Layer: 9
   m_Name: Player
   m_TagString: Player
@@ -22246,6 +22323,25 @@ MonoBehaviour:
   wallJumpVerticalSpeed: 11
   inputLockDuration: 0.15
   wallCoyoteTime: 0.1
+--- !u!114 &2003877438
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2003877414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c97cfa4847dfa4e919630d98fd4b8d3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStatusEffects
+  statusEffects:
+  - {fileID: 11400000, guid: bed1883ee13ee4fd3a328f075241b90c, type: 2}
+  - {fileID: 11400000, guid: 7fa0ae576cef246a1a6f1945ebafd154, type: 2}
+  - {fileID: 11400000, guid: 0f38ac82577db498ea3dc7b44b6a134f, type: 2}
+  - {fileID: 11400000, guid: 5e64fe9a4682a44b98654465244cd557, type: 2}
+  debugStatus: 0
+  debugAmount: 10
 --- !u!1 &2030194219
 GameObject:
   m_ObjectHideFlags: 0

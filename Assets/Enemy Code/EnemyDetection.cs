@@ -22,6 +22,11 @@ public class EnemyDetection : MonoBehaviour
     [Tooltip("Layers that block sight. Defaults to the Ground layer when left empty.")]
     public LayerMask obstacleMask;
 
+    [Tooltip("Once the enemy is after the player, it keeps track of them anywhere within " +
+             "detection range — behind it, or up on a platform where the platform itself " +
+             "blocks the view. The leash and memory still apply.")]
+    public bool trackWhileAlerted = true;
+
     [Header("Hearing")]
     [Tooltip("The enemy notices the player within this range in any direction.")]
     public float hearingRange = 1.5f;
@@ -36,6 +41,7 @@ public class EnemyDetection : MonoBehaviour
     private EnemyMovement movement;
 
     private float lastSensedTime = float.NegativeInfinity;
+    private bool alerted;
 
     void Awake()
     {
@@ -89,6 +95,27 @@ public class EnemyDetection : MonoBehaviour
         return null;
     }
 
+    // EnemyController sets this while the enemy is fighting the player.
+    public void SetAlerted(bool value)
+    {
+        alerted = value;
+    }
+
+    // True when the player is in plain sight right now — in the cone with
+    // nothing in the way (not heard, remembered or tracked).
+    public bool CanSeePlayerNow()
+    {
+        if (player == null)
+            return false;
+
+        bool wasAlerted = alerted;
+        alerted = false;
+        bool seen = CanSeePlayer();
+        alerted = wasAlerted;
+
+        return seen;
+    }
+
     // =========================
     // SENSES
     // =========================
@@ -110,6 +137,10 @@ public class EnemyDetection : MonoBehaviour
 
         if (distance > detectionRange)
             return false;
+
+        // Already after the player: range is all that matters.
+        if (alerted && trackWhileAlerted)
+            return true;
 
         // Inside the cone in front of the enemy?
         float facing = movement != null ? movement.GetFacingDirection() : 1f;

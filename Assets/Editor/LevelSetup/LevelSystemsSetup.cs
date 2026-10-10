@@ -24,6 +24,7 @@ public static class LevelSystemsSetup
         bool changed = false;
 
         changed |= AddPatrolToEnemies();
+        changed |= AddToEnemies<EnemyJump>();
 
         if (!changed)
         {
@@ -52,6 +53,24 @@ public static class LevelSystemsSetup
 
             Undo.AddComponent<EnemyPatrol>(enemy.gameObject);
             Debug.Log("LevelSystemsSetup: added EnemyPatrol to '" + enemy.name + "'", enemy);
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    // Adds component T to every enemy that doesn't have it yet.
+    static bool AddToEnemies<T>() where T : Component
+    {
+        bool changed = false;
+
+        foreach (EnemyController enemy in Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Include))
+        {
+            if (enemy.GetComponent<T>() != null)
+                continue;
+
+            Undo.AddComponent<T>(enemy.gameObject);
+            Debug.Log("LevelSystemsSetup: added " + typeof(T).Name + " to '" + enemy.name + "'", enemy);
             changed = true;
         }
 

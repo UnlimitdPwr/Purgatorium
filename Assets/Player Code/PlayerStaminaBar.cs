@@ -30,7 +30,8 @@ public class PlayerStaminaBar : MonoBehaviour
         barTransform = GetComponent<RectTransform>();
 
         playerStamina.OnStaminaChanged += UpdateStaminaBar;
-        playerStats.OnStatsChanged += UpdateBarSize;
+        if (playerStats != null)
+            playerStats.OnStatsChanged += UpdateBarSize;
 
         // This function initializes the stamina fill to the player's current stamina percentage.
         float startingFill = playerStamina.StaminaPercent;

@@ -30,6 +30,7 @@ public static class LevelSystemsSetup
         changed |= AddToEnemies<EnemyAttackToken>();
         changed |= AddToEnemies<EnemyLoot>();
         changed |= AddToEnemies<EnemyRespawn>();
+        changed |= AddPlayerStatsToPlayers();
 
         if (!changed)
         {
@@ -58,6 +59,29 @@ public static class LevelSystemsSetup
 
             Undo.AddComponent<EnemyPatrol>(enemy.gameObject);
             Debug.Log("LevelSystemsSetup: added EnemyPatrol to '" + enemy.name + "'", enemy);
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    // =========================
+    // PLAYER
+    // =========================
+
+    // PlayerHealth and PlayerStamina read their max values from PlayerStats.
+    // The script defaults match SampleScene's Player, so no values are set here.
+    static bool AddPlayerStatsToPlayers()
+    {
+        bool changed = false;
+
+        foreach (PlayerHealth player in Object.FindObjectsByType<PlayerHealth>(FindObjectsInactive.Include))
+        {
+            if (player.GetComponent<PlayerStats>() != null)
+                continue;
+
+            Undo.AddComponent<PlayerStats>(player.gameObject);
+            Debug.Log("LevelSystemsSetup: added PlayerStats to '" + player.name + "'", player);
             changed = true;
         }
 

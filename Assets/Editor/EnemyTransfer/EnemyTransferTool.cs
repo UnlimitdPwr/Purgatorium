@@ -3,21 +3,23 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// One-off helper: replaces SampleScene's enemy with a copy of the enemy that
-// was built and tuned in Scene2 (components, settings, hitbox layout, health
-// bars — everything). The copy goes where SampleScene's old enemy stood.
-// Scene2 is only read, never changed. Delete this tool once it has been used.
+// Copies the enemy that's built and tuned in Scene2 (components, settings,
+// hitbox layout, health bars — everything) into the scene you have open.
+//
+// The copy is ADDED — enemies already in the scene are left alone. It lands
+// with its feet on the selected object — on top of it if it's a platform, at
+// its position if it's a marker/empty — or in the middle of the Scene view if
+// nothing is selected. Scene2 is only read, never
+// changed. The open scene is not saved for you: Ctrl/Cmd+Z undoes the copy.
 public static class EnemyTransferTool
 {
-    // The scenes are found by GUID (from their .meta files), so renaming or
-    // moving them doesn't break the tool.
+    // Found by GUID (from its .meta file), so renaming or moving it doesn't break the tool.
     const string SourceSceneGuid = "b409d20b7acadcc4bbc3dc8d70f9985e"; // Scene2
-    const string TargetSceneGuid = "8c9cfa26abfee488c85f1582747f6a02"; // SampleScene
 
     const string DialogTitle = "Enemy Transfer";
 
-    [MenuItem("Tools/Enemy Transfer/Copy Scene2 Enemy Into SampleScene")]
-    public static void CopyScene2EnemyIntoSampleScene()
+    [MenuItem("Tools/Enemy Transfer/Copy Scene2 Enemy Into Open Scene")]
+    public static void CopyScene2EnemyIntoOpenScene()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode)
         {
@@ -26,92 +28,107 @@ public static class EnemyTransferTool
             return;
         }
 
-        if (!TryFindScenes(out string sourcePath, out string targetPath, out string error))
-        {
-            EditorUtility.DisplayDialog(DialogTitle, error, "OK");
-            return;
-        }
-
-        string sourceName = System.IO.Path.GetFileNameWithoutExtension(sourcePath);
-        string targetName = System.IO.Path.GetFileNameWithoutExtension(targetPath);
-
-        bool confirmed = EditorUtility.DisplayDialog(DialogTitle,
-            "Replace the enemy in '" + targetName + "' with a copy of the enemy from '" + sourceName +
-            "'?\n\nThe copy is placed where the current enemy stands, and '" + targetName +
-            "' is saved. '" + sourceName + "' is not changed.",
-            "Replace", "Cancel");
-
-        if (!confirmed)
-            return;
-
-        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-            return;
-
-        string message = Transfer();
+        string message = Transfer(Selection.activeGameObject, GetSceneViewCenter());
 
         EditorUtility.DisplayDialog(DialogTitle, message, "OK");
     }
 
-    // Does the work without the dialogs. Returns a message saying what
-    // happened; it starts with "Done" on success.
-    public static string Transfer()
+    // Does the work without the dialogs. `placeAt` (may be null) is the object
+    // whose position the enemy's feet go to; otherwise `fallbackPosition`.
+    // Returns a message saying what happened; it starts with "Done" on success.
+    public static string Transfer(GameObject placeAt, Vector3 fallbackPosition)
     {
-        if (!TryFindScenes(out string sourcePath, out string targetPath, out string error))
-            return Fail(error);
+        string sourcePath = AssetDatabase.GUIDToAssetPath(SourceSceneGuid);
 
-        Scene target = EditorSceneManager.OpenScene(targetPath, OpenSceneMode.Single);
-        Scene source = EditorSceneManager.OpenScene(sourcePath, OpenSceneMode.Additive);
+        if (string.IsNullOrEmpty(sourcePath) || AssetDatabase.LoadAssetAtPath<SceneAsset>(sourcePath) == null)
+            return Fail("Couldn't find Scene2. It may have been deleted, or its .meta file replaced " +
+                        "(which gives it a new ID). Restore it from git and try again.");
 
-        GameObject sourceEnemy = FindOnlyEnemy(source, out error);
-        GameObject oldEnemy = sourceEnemy != null ? FindOnlyEnemy(target, out error) : null;
+        Scene target = SceneManager.GetActiveScene();
 
-        if (sourceEnemy == null || oldEnemy == null)
+        if (target.path == sourcePath)
+            return Fail("Scene2 is the open scene — open the scene you want the enemy in first.");
+
+        // Only use the selection if it belongs to the scene we're copying into.
+        if (placeAt != null && placeAt.scene != target)
+            placeAt = null;
+
+        // Use Scene2 as-is if it's already open alongside; otherwise open it
+        // additively just long enough to copy from it.
+        Scene source = SceneManager.GetSceneByPath(sourcePath);
+        bool openedSource = !source.isLoaded;
+
+        if (openedSource)
+            source = EditorSceneManager.OpenScene(sourcePath, OpenSceneMode.Additive);
+
+        GameObject sourceEnemy = FindOnlyEnemy(source, out string error);
+
+        if (sourceEnemy == null)
         {
-            EditorSceneManager.CloseScene(source, true);
+            if (openedSource)
+                EditorSceneManager.CloseScene(source, true);
+
             return Fail(error);
         }
 
         GameObject copy = Object.Instantiate(sourceEnemy);
         SceneManager.MoveGameObjectToScene(copy, target);
-        Undo.RegisterCreatedObjectUndo(copy, "Copy " + source.name + " enemy");
+        copy.name = GameObjectUtility.GetUniqueNameForSibling(null, sourceEnemy.name.Trim());
 
-        // Take over the old enemy's name, place in the hierarchy and position.
-        copy.name = oldEnemy.name;
-        copy.transform.SetParent(oldEnemy.transform.parent, false);
-        copy.transform.SetSiblingIndex(oldEnemy.transform.GetSiblingIndex());
-        copy.transform.position = oldEnemy.transform.position;
+        Vector3 position = placeAt != null ? StandingPoint(placeAt) : fallbackPosition;
+        position.z = sourceEnemy.transform.position.z;
+        copy.transform.position = position + Vector3.up * PivotHeightAboveFeet(copy);
 
-        Undo.DestroyObjectImmediate(oldEnemy);
+        Undo.RegisterCreatedObjectUndo(copy, "Copy Scene2 enemy");
 
-        string sourceName = source.name;
-        EditorSceneManager.CloseScene(source, true);
+        if (openedSource)
+            EditorSceneManager.CloseScene(source, true);
+
         SceneManager.SetActiveScene(target);
-
         EditorSceneManager.MarkSceneDirty(target);
+        Selection.activeGameObject = copy;
 
-        if (!EditorSceneManager.SaveScene(target))
-            return Fail("Copied the enemy, but saving '" + target.name + "' failed — save it manually (Ctrl/Cmd+S).");
-
-        string message = "Done — '" + target.name + "' now has the enemy from '" + sourceName +
-                         "' and has been saved. Commit " + target.path + ".";
+        string where = placeAt != null ? "at '" + placeAt.name + "'" : "in the middle of the Scene view";
+        string message = "Done — added '" + copy.name + "' to '" + target.name + "' " + where +
+                         ". The scene isn't saved yet: save it when you're happy (Ctrl/Cmd+Z undoes the copy).";
         Debug.Log("EnemyTransferTool: " + message, copy);
         return message;
     }
 
-    static bool TryFindScenes(out string sourcePath, out string targetPath, out string error)
+    // Where the enemy's feet go: the top-middle of a solid object (a platform),
+    // otherwise the object's position (a marker or empty).
+    static Vector3 StandingPoint(GameObject target)
     {
-        sourcePath = AssetDatabase.GUIDToAssetPath(SourceSceneGuid);
-        targetPath = AssetDatabase.GUIDToAssetPath(TargetSceneGuid);
-        error = null;
+        Physics2D.SyncTransforms();
 
-        if (string.IsNullOrEmpty(sourcePath) || AssetDatabase.LoadAssetAtPath<SceneAsset>(sourcePath) == null)
-            error = "Couldn't find the source scene (Scene2). It may have been deleted, or its .meta file replaced " +
-                    "(which gives it a new ID). Restore it from git and try again.";
-        else if (string.IsNullOrEmpty(targetPath) || AssetDatabase.LoadAssetAtPath<SceneAsset>(targetPath) == null)
-            error = "Couldn't find the target scene (SampleScene). It may have been deleted, or its .meta file replaced " +
-                    "(which gives it a new ID). Restore it from git and try again.";
+        foreach (Collider2D col in target.GetComponents<Collider2D>())
+        {
+            if (!col.isTrigger)
+                return new Vector3(col.bounds.center.x, col.bounds.max.y, 0f);
+        }
 
-        return error == null;
+        return target.transform.position;
+    }
+
+    // How far the enemy's pivot sits above the bottom of its body collider, so
+    // the copy can be placed by its feet rather than its pivot.
+    static float PivotHeightAboveFeet(GameObject enemy)
+    {
+        Physics2D.SyncTransforms();
+
+        foreach (Collider2D col in enemy.GetComponents<Collider2D>())
+        {
+            if (!col.isTrigger)
+                return enemy.transform.position.y - col.bounds.min.y;
+        }
+
+        return 0f;
+    }
+
+    static Vector3 GetSceneViewCenter()
+    {
+        SceneView view = SceneView.lastActiveSceneView;
+        return view != null ? view.pivot : Vector3.zero;
     }
 
     // The scene's single enemy. Refuses to guess when there are several.

@@ -22,14 +22,24 @@ public class LadderClimbScript : MonoBehaviour
     // =========================
 
     private Rigidbody2D rb;
+    private Collider2D bodyCollider;
     private MovementScript movement;
     private PlayerKnockback knockback;
+
+    private readonly Collider2D[] overlapResults = new Collider2D[8];
+    private ContactFilter2D triggerFilter;
 
     private Ladder currentLadder;
     private float climbInput;
     private float normalGravityScale;
 
     public bool IsClimbing { get; private set; }
+
+    // The climb stops this far below the ladder's top, so the body stays
+    // inside the ladder instead of slipping off the top edge.
+    const float TopMargin = 0.1f;
+
+    float Feet => bodyCollider != null ? bodyCollider.bounds.min.y : rb.position.y;
 
     // =========================
     // SETUP
@@ -41,6 +51,19 @@ public class LadderClimbScript : MonoBehaviour
         movement = GetComponent<MovementScript>();
         knockback = GetComponent<PlayerKnockback>();
         normalGravityScale = rb.gravityScale;
+
+        // The body collider, not a trigger child (parry/pickup areas etc.).
+        foreach (Collider2D col in GetComponents<Collider2D>())
+        {
+            if (!col.isTrigger)
+            {
+                bodyCollider = col;
+                break;
+            }
+        }
+
+        triggerFilter = new ContactFilter2D();
+        triggerFilter.useTriggers = true;
     }
 
     // =========================
@@ -70,7 +93,7 @@ public class LadderClimbScript : MonoBehaviour
             return;
 
         // Already at (or above) the top — nothing to climb.
-        if (vertical > 0f && rb.position.y >= currentLadder.TopY)
+        if (vertical > 0f && Feet >= currentLadder.TopY - TopMargin)
             return;
 
         StartClimbing();
@@ -115,6 +138,8 @@ public class LadderClimbScript : MonoBehaviour
 
     void FixedUpdate()
     {
+        currentLadder = FindOverlappingLadder();
+
         if (!IsClimbing)
             return;
 
@@ -137,7 +162,7 @@ public class LadderClimbScript : MonoBehaviour
         float vertical = climbInput;
 
         // Stop at the top instead of climbing off into the air.
-        if (vertical > 0f && rb.position.y >= currentLadder.TopY)
+        if (vertical > 0f && Feet >= currentLadder.TopY - TopMargin)
             vertical = 0f;
 
         rb.linearVelocity = new Vector2(0f, vertical * climbSpeed);
@@ -147,23 +172,24 @@ public class LadderClimbScript : MonoBehaviour
     // LADDER TRACKING
     // =========================
 
-    void OnTriggerEnter2D(Collider2D other)
+    // Checked against the body collider only — the player's trigger children
+    // (parry, pickup range...) entering or leaving a ladder must not count.
+    Ladder FindOverlappingLadder()
     {
-        Ladder ladder = other.GetComponent<Ladder>();
+        if (bodyCollider == null)
+            return null;
 
-        if (ladder != null)
-            currentLadder = ladder;
-    }
+        int count = bodyCollider.Overlap(triggerFilter, overlapResults);
 
-    void OnTriggerExit2D(Collider2D other)
-    {
-        Ladder ladder = other.GetComponent<Ladder>();
+        for (int i = 0; i < count; i++)
+        {
+            Ladder ladder = overlapResults[i].GetComponent<Ladder>();
 
-        if (ladder == null || ladder != currentLadder)
-            return;
+            if (ladder != null)
+                return ladder;
+        }
 
-        currentLadder = null;
-        StopClimbing();
+        return null;
     }
 
     void OnDisable()

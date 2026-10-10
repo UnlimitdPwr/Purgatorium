@@ -82,7 +82,13 @@ public class PlayerDeath : MonoBehaviour
             health.RestoreFullHealth();
         }
 
-        
+        PlayerStatusEffects status = GetComponent<PlayerStatusEffects>();
+
+        if (status != null)
+        {
+            status.ClearAll();
+        }
+
 
         if (controller != null)
             controller.enabled = true;

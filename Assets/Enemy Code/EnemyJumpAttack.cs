@@ -23,6 +23,9 @@ public class EnemyJumpAttack : MonoBehaviour
     [Header("Damage")]
     public int damage = 15;
 
+    [Tooltip("Status buildup the leap's hit adds to the player. Leave empty for none.")]
+    public StatusInfliction[] statusOnHit = new StatusInfliction[0];
+
     [Header("When To Use It")]
     [Tooltip("Closest the player can be for a leap — any closer and the enemy just swings.")]
     public float minRange = 2.5f;
@@ -224,7 +227,7 @@ public class EnemyJumpAttack : MonoBehaviour
             if (movement.GetVerticalVelocity() <= 0f)
             {
                 passedApex = true;
-                hitbox.EnableHitbox(damage);
+                hitbox.EnableHitbox(damage, statusOnHit);
             }
         }
 

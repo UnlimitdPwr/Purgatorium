@@ -4,6 +4,9 @@ public class EnemyAttack : MonoBehaviour
 {
     public int damage = 10;
 
+    [Tooltip("Status buildup each sword hit adds to the player. Leave empty for none.")]
+    public StatusInfliction[] statusOnHit = new StatusInfliction[0];
+
     [Tooltip("Pause after a combo ends before the enemy can start another.")]
     public float attackCooldown = 1f;
 
@@ -156,7 +159,7 @@ public class EnemyAttack : MonoBehaviour
         if (movement != null)
             hitbox.SetFacing(movement.GetFacingDirection());
 
-        hitbox.EnableHitbox(damage);
+        hitbox.EnableHitbox(damage, statusOnHit);
     }
 
     public void DisableHitbox()

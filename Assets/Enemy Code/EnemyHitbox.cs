@@ -5,6 +5,7 @@ public class EnemyHitbox : MonoBehaviour
     private Collider2D hitbox;
 
     private int damage;
+    private StatusInfliction[] statusOnHit;
     private bool canDamage;
 
     // The hitbox is laid out in the scene for an enemy facing right (the way
@@ -84,9 +85,10 @@ public class EnemyHitbox : MonoBehaviour
         hitbox.offset = offset;
     }
 
-    public void EnableHitbox(int damageAmount)
+    public void EnableHitbox(int damageAmount, StatusInfliction[] statuses = null)
     {
         damage = damageAmount;
+        statusOnHit = statuses;
         canDamage = true;
 
         hitbox.enabled = true;
@@ -157,6 +159,18 @@ public class EnemyHitbox : MonoBehaviour
         Debug.Log("PLAYER HIT! Applying " + damage + " damage.");
 
         playerHealth.TakeDamage(damage);
+
+        // Status buildup rides on the hit (a parried hit never gets here).
+        if (statusOnHit != null && statusOnHit.Length > 0)
+        {
+            IStatusReceiver receiver = other.GetComponentInParent<IStatusReceiver>();
+
+            if (receiver != null)
+            {
+                foreach (StatusInfliction infliction in statusOnHit)
+                    receiver.AddBuildup(infliction.status, infliction.buildup);
+            }
+        }
 
         // Push the player away from the enemy's body (not the hitbox, which
         // can sit past the player's center when they're overlapping).

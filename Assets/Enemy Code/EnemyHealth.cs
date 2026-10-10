@@ -43,8 +43,12 @@ public class EnemyHealth : MonoBehaviour
     // Called by EnemyHitbox on a successful parry against this enemy.
     public void ApplyParry()
     {
+        // A status condition can make parries fill the secondary bar faster.
+        EnemyStatusEffects status = GetComponent<EnemyStatusEffects>();
+        float secondaryMultiplier = status != null ? status.ParrySecondaryMultiplier : 1f;
+
         AddPrimary(parryPrimaryAmount);
-        AddSecondary(parrySecondaryAmount);
+        AddSecondary(parrySecondaryAmount * secondaryMultiplier);
     }
 
     // =========================

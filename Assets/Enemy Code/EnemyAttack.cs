@@ -43,11 +43,14 @@ public class EnemyAttack : MonoBehaviour
 
     private EnemyAnimation anim;
     private EnemyMovement movement;
+    private EnemyStatusEffects status;
 
     void Awake()
     {
         anim = GetComponent<EnemyAnimation>();
         movement = GetComponent<EnemyMovement>();
+        status = GetComponent<EnemyStatusEffects>();
+
         if (hitbox == null)
             hitbox = FindSwingHitbox();
 
@@ -78,6 +81,11 @@ public class EnemyAttack : MonoBehaviour
     public bool IsAttacking => swingTimer > 0f;
 
     public bool CanAttack => attackTimer <= 0f;
+
+    // Damage after status conditions (weaker attacks). Used by the sword and
+    // by body contact.
+    public int CurrentDamage =>
+        status != null ? Mathf.RoundToInt(damage * status.AttackDamageMultiplier) : damage;
 
     // True once every swing of the current combo has been thrown.
     public bool ComboFinished => swingsLeft <= 0;
@@ -110,7 +118,9 @@ public class EnemyAttack : MonoBehaviour
 
         // Short gap to the next swing of the combo; the full cooldown after
         // the last one. Both count from the end of this swing.
-        attackTimer = swingDuration + (swingsLeft > 0 ? comboSwingDelay : attackCooldown);
+        // Status conditions can lengthen both pauses (slower attacks).
+        float pauseMultiplier = status != null ? status.AttackCooldownMultiplier : 1f;
+        attackTimer = swingDuration + (swingsLeft > 0 ? comboSwingDelay : attackCooldown) * pauseMultiplier;
 
         return true;
     }
@@ -163,7 +173,7 @@ public class EnemyAttack : MonoBehaviour
         if (movement != null)
             hitbox.SetFacing(movement.GetFacingDirection());
 
-        hitbox.EnableHitbox(damage, statusOnHit, statusMultiplier);
+        hitbox.EnableHitbox(CurrentDamage, statusOnHit, statusMultiplier);
     }
 
     public void DisableHitbox()

@@ -2,8 +2,8 @@ using UnityEngine;
 
 // The buildup meter for one status on one character. Plain class, not a
 // component — PlayerStatusEffects and EnemyStatusEffects each hold one per
-// status and call Tick() every frame. All the rules live here so the player
-// and enemies can't drift apart.
+// status and call Tick() every frame. All the buildup rules live here so the
+// player and enemies can't drift apart; what a condition DOES lives in them.
 public class StatusMeter
 {
     public StatusEffectDefinition Definition { get; }
@@ -15,7 +15,6 @@ public class StatusMeter
     public float Fill => Buildup / Definition.threshold;
 
     private float timeSinceExposure;
-    private float tickTimer;
 
     public StatusMeter(StatusEffectDefinition definition)
     {
@@ -41,7 +40,6 @@ public class StatusMeter
 
         Buildup = Definition.threshold;
         IsConditionActive = true;
-        tickTimer = Definition.tickInterval;
         return true;
     }
 
@@ -49,47 +47,31 @@ public class StatusMeter
     // PER FRAME
     // =========================
 
-    // Advances the meter. Returns how many damage ticks landed this frame
-    // (almost always 0 or 1). conditionEnded is set when it wore off.
-    public int Tick(float deltaTime, out bool conditionEnded)
+    // Advances the meter: recedes buildup, or drains an active condition.
+    // Returns true on the frame the condition wears off.
+    public bool Tick(float deltaTime)
     {
-        conditionEnded = false;
-
         if (IsConditionActive)
-            return TickCondition(deltaTime, out conditionEnded);
+        {
+            float drainPerSecond = Definition.threshold / Definition.conditionDuration;
+            Buildup = Mathf.Max(0f, Buildup - drainPerSecond * deltaTime);
+
+            if (Buildup > 0f)
+                return false;
+
+            IsConditionActive = false;
+            return true;
+        }
 
         if (Buildup <= 0f)
-            return 0;
+            return false;
 
         timeSinceExposure += deltaTime;
 
         if (timeSinceExposure >= Definition.recedeDelay)
             Buildup = Mathf.Max(0f, Buildup - Definition.recedeRate * deltaTime);
 
-        return 0;
-    }
-
-    int TickCondition(float deltaTime, out bool conditionEnded)
-    {
-        int ticks = 0;
-
-        tickTimer -= deltaTime;
-
-        while (tickTimer <= 0f)
-        {
-            ticks++;
-            tickTimer += Definition.tickInterval;
-        }
-
-        float drainPerSecond = Definition.threshold / Definition.conditionDuration;
-        Buildup = Mathf.Max(0f, Buildup - drainPerSecond * deltaTime);
-
-        conditionEnded = Buildup <= 0f;
-
-        if (conditionEnded)
-            IsConditionActive = false;
-
-        return ticks;
+        return false;
     }
 
     // =========================
@@ -105,7 +87,6 @@ public class StatusMeter
         Buildup = 0f;
         IsConditionActive = false;
         timeSinceExposure = 0f;
-        tickTimer = 0f;
 
         return wasActive;
     }

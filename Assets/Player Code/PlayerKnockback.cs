@@ -175,7 +175,7 @@ public class PlayerKnockback : MonoBehaviour
             EnemyAttack attack = enemy.GetComponent<EnemyAttack>();
 
             if (attack != null)
-                health.TakeDamage(attack.damage);
+                health.TakeDamage(attack.CurrentDamage);
         }
 
         ApplyKnockback(enemy.transform.position);

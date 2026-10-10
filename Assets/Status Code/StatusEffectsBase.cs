@@ -100,12 +100,10 @@ public abstract class StatusEffectsBase : MonoBehaviour, IStatusReceiver
 
         foreach (StatusMeter meter in meterList)
         {
-            int ticks = meter.Tick(Time.deltaTime, out bool ended);
+            if (meter.IsConditionActive)
+                ConditionUpdate(meter, Time.deltaTime);
 
-            for (int i = 0; i < ticks; i++)
-                ConditionTick(meter);
-
-            if (ended)
+            if (meter.Tick(Time.deltaTime))
                 EndCondition(meter);
         }
     }
@@ -161,8 +159,59 @@ public abstract class StatusEffectsBase : MonoBehaviour, IStatusReceiver
     public float BuildupRate => buildupRate;
 
     protected virtual void ConditionStarted(StatusMeter meter) { }
-    protected abstract void ConditionTick(StatusMeter meter);
+    protected abstract void ConditionUpdate(StatusMeter meter, float deltaTime);
     protected virtual void ConditionEnded(StatusMeter meter) { }
+
+    // =========================
+    // COMBINING ACTIVE CONDITIONS
+    // =========================
+
+    // Weakest-ignored rule: of every active condition with this multiplier
+    // ticked, only the one furthest from 1 in the harmful direction counts.
+    // lowerIsStronger: true for slows/reductions, false for "longer"/"more".
+    // 1 when no active condition has it.
+    protected float Strongest(Func<StatusEffectDefinition, MultiplierEffect> pick, bool lowerIsStronger)
+    {
+        float result = 1f;
+        bool any = false;
+
+        foreach (StatusMeter meter in meterList)
+        {
+            if (!meter.IsConditionActive)
+                continue;
+
+            MultiplierEffect effect = pick(meter.Definition);
+
+            if (effect == null || !effect.enabled)
+                continue;
+
+            if (!any)
+                result = effect.multiplier;
+            else
+                result = lowerIsStronger ? Mathf.Min(result, effect.multiplier) : Mathf.Max(result, effect.multiplier);
+
+            any = true;
+        }
+
+        return result;
+    }
+
+    // True if any active condition has this effect ticked.
+    protected bool AnyActive(Func<StatusEffectDefinition, ConditionEffect> pick)
+    {
+        foreach (StatusMeter meter in meterList)
+        {
+            if (!meter.IsConditionActive)
+                continue;
+
+            ConditionEffect effect = pick(meter.Definition);
+
+            if (effect != null && effect.enabled)
+                return true;
+        }
+
+        return false;
+    }
 
     // =========================
     // DEBUG

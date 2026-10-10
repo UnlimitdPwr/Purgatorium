@@ -93,6 +93,7 @@ public class EnemyJumpAttack : MonoBehaviour
     private EnemyTargeting targeting;
     private EnemyAnimation anim;
     private EnemyHitbox hitbox;
+    private EnemyStatusEffects status;
 
     private Phase phase = Phase.Idle;
     private float phaseTimer;
@@ -111,6 +112,7 @@ public class EnemyJumpAttack : MonoBehaviour
         detection = GetComponent<EnemyDetection>();
         targeting = GetComponent<EnemyTargeting>();
         anim = GetComponent<EnemyAnimation>();
+        status = GetComponent<EnemyStatusEffects>();
 
         hitbox = FindOrCreateHitbox();
     }
@@ -231,7 +233,12 @@ public class EnemyJumpAttack : MonoBehaviour
             if (movement.GetVerticalVelocity() <= 0f)
             {
                 passedApex = true;
-                hitbox.EnableHitbox(damage, statusOnHit, statusMultiplier);
+                // Status conditions can weaken the hit (weaker attacks).
+                int leapDamage = status != null
+                    ? Mathf.RoundToInt(damage * status.AttackDamageMultiplier)
+                    : damage;
+
+                hitbox.EnableHitbox(leapDamage, statusOnHit, statusMultiplier);
             }
         }
 

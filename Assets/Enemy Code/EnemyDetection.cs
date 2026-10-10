@@ -40,6 +40,7 @@ public class EnemyDetection : MonoBehaviour
     private PlayerDeath playerDeath;
     private Collider2D body;
     private EnemyMovement movement;
+    private EnemyStatusEffects status;
 
     private float lastSensedTime = float.NegativeInfinity;
     private bool alerted;
@@ -48,6 +49,7 @@ public class EnemyDetection : MonoBehaviour
     {
         movement = GetComponent<EnemyMovement>();
         body = GetComponent<Collider2D>();
+        status = GetComponent<EnemyStatusEffects>();
 
         if (obstacleMask == 0)
             obstacleMask = LayerMask.GetMask("Ground");
@@ -149,7 +151,10 @@ public class EnemyDetection : MonoBehaviour
         Vector2 toPlayer = target - eye;
         float distance = toPlayer.magnitude;
 
-        if (distance > detectionRange)
+        // A status condition can shorten sight (hearing is unaffected).
+        float range = status != null ? detectionRange * status.SightRangeMultiplier : detectionRange;
+
+        if (distance > range)
             return false;
 
         // Already after the player: range is all that matters.

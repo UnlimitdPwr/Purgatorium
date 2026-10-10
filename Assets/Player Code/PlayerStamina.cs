@@ -26,6 +26,7 @@ public class PlayerStamina : MonoBehaviour
     private bool isSprinting;
 
     private DashScript dash;
+    private PlayerStatusEffects status;
     private PlayerStats playerStats;
 
     public float CurrentStamina => currentStamina;
@@ -69,6 +70,7 @@ public class PlayerStamina : MonoBehaviour
         currentStamina = MaxStamina;
 
         dash = GetComponent<DashScript>();
+        status = GetComponent<PlayerStatusEffects>();
 
         if (playerStats != null)
         {
@@ -108,8 +110,20 @@ public class PlayerStamina : MonoBehaviour
         }
         else if (!dashing)
         {
+            float regenMultiplier = status != null ? status.StaminaRegenMultiplier : 1f;
+
             Regenerate(
                 regenPerSecond *
+                regenMultiplier *
+                Time.deltaTime
+            );
+        }
+
+        // Status conditions can drain stamina on top of everything else.
+        if (status != null)
+        {
+            Drain(
+                status.StaminaDrainPerSecond *
                 Time.deltaTime
             );
         }

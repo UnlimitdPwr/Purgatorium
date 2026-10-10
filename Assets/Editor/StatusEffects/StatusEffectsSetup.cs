@@ -95,6 +95,10 @@ public static class StatusEffectsSetup
             definition.displayName = type.ToString();
             definition.barColor = DefaultColors.TryGetValue(type, out Color color) ? color : Color.white;
 
+            // A full curse bar kills the player outright.
+            if (type == StatusType.Curse)
+                definition.onPlayer.instantDeath.enabled = true;
+
             string path = DefinitionsFolder + "/" + type + ".asset";
             AssetDatabase.CreateAsset(definition, path);
             Debug.Log("StatusEffectsSetup: created " + path, definition);

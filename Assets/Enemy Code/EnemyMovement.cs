@@ -38,6 +38,7 @@ public class EnemyMovement : MonoBehaviour
     private Collider2D body;
     private EnemyKnockback knockback;
     private HazardReceiver hazards;
+    private EnemyStatusEffects status;
     private float moveDirection;
 
     // True while a jump/hop launched by Launch() is in the air. Movement
@@ -59,6 +60,7 @@ public class EnemyMovement : MonoBehaviour
         body = GetComponent<Collider2D>();
         knockback = GetComponent<EnemyKnockback>();
         hazards = GetComponent<HazardReceiver>();
+        status = GetComponent<EnemyStatusEffects>();
     }
 
     void FixedUpdate()
@@ -83,7 +85,13 @@ public class EnemyMovement : MonoBehaviour
             launched = false;
         }
 
-        float speed = hazards != null ? moveSpeed * hazards.SpeedMultiplier : moveSpeed;
+        // Hazard and status-condition slows don't stack — the strongest counts.
+        float slow = hazards != null ? hazards.SpeedMultiplier : 1f;
+
+        if (status != null)
+            slow = Mathf.Min(slow, status.MoveSpeedMultiplier);
+
+        float speed = moveSpeed * slow;
 
         rb.linearVelocity = new Vector2(
             moveDirection * speed,

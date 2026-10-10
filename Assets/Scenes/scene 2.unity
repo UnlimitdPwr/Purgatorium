@@ -462,7 +462,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5a14c315e68f46448c3b937c0976b42, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStamina
-  maxStamina: 50
   dashCost: 15
   sprintDrainPerSecond: 5
   regenPerSecond: 10
@@ -509,7 +508,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a156e0dc3dcce44b8c4c7aefe8e6b23, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  maxHealth: 100
 --- !u!95 &537789732
 Animator:
   serializedVersion: 7
@@ -575,6 +573,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   moveSpeed: 5
   jumpForce: 10
+  jumpCutMultiplier: 0.5
   groundCheck: {fileID: 727765518}
   groundCheckRadius: 0.1
   groundLayer:
@@ -1160,6 +1159,7 @@ MonoBehaviour:
   primaryFill: {fileID: 490673879}
   secondaryFill: {fileID: 2015870004}
   fillDuration: 0.15
+  primaryDrains: 1
 --- !u!223 &1650744113
 Canvas:
   m_ObjectHideFlags: 0
@@ -1381,6 +1381,10 @@ GameObject:
   - component: {fileID: 1902844961}
   - component: {fileID: 1902844960}
   - component: {fileID: 1902844974}
+  - component: {fileID: 1902844978}
+  - component: {fileID: 1902844977}
+  - component: {fileID: 1902844976}
+  - component: {fileID: 1902844975}
   m_Layer: 0
   m_Name: 'Enemy '
   m_TagString: Untagged
@@ -1464,6 +1468,7 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 0
+  trackWhileAlerted: 1
   hearingRange: 1.5
   memoryDuration: 2
 --- !u!95 &1902844965
@@ -1502,6 +1507,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   damage: 20
   attackCooldown: 1
+  minComboSwings: 1
+  maxComboSwings: 3
+  comboSwingDelay: 0.15
+  hitbox: {fileID: 0}
 --- !u!114 &1902844967
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1514,6 +1523,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86a572ac88ec6df45b6c6426b58747fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  flashDuringWindUp: 1
+  windUpTint: {r: 1, g: 0.45, b: 0.45, a: 1}
+  windUpFlashRate: 8
 --- !u!114 &1902844968
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1527,7 +1539,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   moveSpeed: 3
-  jumpForce: 10
   groundCheck: {fileID: 844571659}
   groundCheckRadius: 0.1
   groundLayer:
@@ -1550,6 +1561,7 @@ MonoBehaviour:
   reachMargin: 0.25
   fallbackAttackRange: 1.1
   leashDistance: 10
+  levelDifference: 0.5
   logStateChanges: 0
 --- !u!70 &1902844970
 CapsuleCollider2D:
@@ -1709,6 +1721,86 @@ MonoBehaviour:
   waitTime: 1
   patrolSpeedMultiplier: 0.5
   arriveThreshold: 0.15
+--- !u!114 &1902844975
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1902844959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01c416b7cd4ad47de944e74de8022e56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyAttackToken
+  maxSimultaneousAttackers: 2
+  waitDistance: 2.5
+--- !u!114 &1902844976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1902844959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 57fd8c96b1ada466a969f056e25b0f3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyJumpAttack
+  damage: 15
+  minRange: 2.5
+  maxRange: 5
+  useChance: 0.35
+  decisionInterval: 0.5
+  cooldown: 4
+  maxHeightDifference: 1
+  leapHeight: 1.7
+  maxLeapSpeed: 9
+  landShortOfTarget: 0.6
+  windUpDuration: 0.4
+  landingRecovery: 0.35
+  hitboxSize: {x: 0.7, y: 0.7}
+  arcRadius: 0.9
+  arcStartAngle: 100
+  arcEndAngle: -20
+--- !u!114 &1902844977
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1902844959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 785c83ae96b1542bba162aa727340247, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyRetreat
+  retreatChance: 0.75
+  hopDistance: 1.5
+  hopHeight: 0.5
+  pauseAfterLanding: 0.4
+--- !u!114 &1902844978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1902844959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac1935a85524e43a38d81770a5bb94a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyJump
+  matchPlayerJumpHeight: 1
+  jumpHeight: 1.7
+  maxJumpDistance: 4
+  maxAirSpeedMultiplier: 1.5
+  ledgeClearance: 0.2
+  landingInset: 0.5
+  maxDropHeight: 4
+  dropHopHeight: 0.3
+  jumpCooldown: 0.4
+  searchInterval: 0.2
 --- !u!1 &2015870002
 GameObject:
   m_ObjectHideFlags: 0

@@ -11,6 +11,7 @@ public class EnemyAnimation : MonoBehaviour
     // enemy's Animator, then starts working with no code change.
 
     private const string JumpTrigger = "Jump";
+    private const string RetreatTrigger = "Retreat";
     private const string GroundedBool = "IsGrounded";
     private const string VerticalVelocityFloat = "VerticalVelocity";
 
@@ -74,6 +75,12 @@ public class EnemyAnimation : MonoBehaviour
     public void PlayJump()
     {
         SetOptionalTrigger(JumpTrigger);
+    }
+
+    // Hop backwards after a combo — fires "Retreat" once that exists.
+    public void PlayRetreat()
+    {
+        SetOptionalTrigger(RetreatTrigger);
     }
 
     // Length in seconds of a clip on this enemy's Animator, or 0 if missing.

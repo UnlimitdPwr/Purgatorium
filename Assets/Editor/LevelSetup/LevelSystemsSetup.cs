@@ -25,6 +25,7 @@ public static class LevelSystemsSetup
 
         changed |= AddPatrolToEnemies();
         changed |= AddToEnemies<EnemyJump>();
+        changed |= AddToEnemies<EnemyRetreat>();
 
         if (!changed)
         {

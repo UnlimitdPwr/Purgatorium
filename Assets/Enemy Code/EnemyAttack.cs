@@ -3,9 +3,24 @@ using UnityEngine;
 public class EnemyAttack : MonoBehaviour
 {
     public int damage = 10;
+
+    [Tooltip("Pause after a combo ends before the enemy can start another.")]
     public float attackCooldown = 1f;
 
+    [Header("Combo")]
+    [Tooltip("Fewest swings in one combo.")]
+    [Min(1)] public int minComboSwings = 1;
+
+    [Tooltip("Most swings in one combo. Each combo picks a number in between at random.")]
+    [Min(1)] public int maxComboSwings = 3;
+
+    [Tooltip("Pause between swings inside a combo.")]
+    public float comboSwingDelay = 0.15f;
+
     private float attackTimer;
+
+    // Swings left in the current combo. 0 = combo finished.
+    private int swingsLeft;
 
     // How long one swing lasts — read from the Attack1 clip so it stays in
     // sync if the animation changes.
@@ -53,18 +68,38 @@ public class EnemyAttack : MonoBehaviour
 
     public bool CanAttack => attackTimer <= 0f;
 
-    // Starts a swing if the cooldown allows it. Returns true if it did.
+    // True once every swing of the current combo has been thrown.
+    public bool ComboFinished => swingsLeft <= 0;
+
+    // Rolls how many swings the next combo has (minComboSwings–maxComboSwings).
+    public void BeginCombo()
+    {
+        int min = Mathf.Max(1, minComboSwings);
+        int max = Mathf.Max(min, maxComboSwings);
+
+        swingsLeft = Random.Range(min, max + 1);
+    }
+
+    // Starts the next swing of the combo if the timing allows it. Returns
+    // true if it did. Starts a new combo if the last one is finished.
     public bool Attack()
     {
         if (attackTimer > 0f)
             return false;
 
+        if (swingsLeft <= 0)
+            BeginCombo();
+
         Debug.Log("Enemy attacks for " + damage + " damage!");
 
         anim.PlayAttack();
 
-        attackTimer = attackCooldown;
+        swingsLeft--;
         swingTimer = swingDuration;
+
+        // Short gap to the next swing of the combo; the full cooldown after
+        // the last one. Both count from the end of this swing.
+        attackTimer = swingDuration + (swingsLeft > 0 ? comboSwingDelay : attackCooldown);
 
         return true;
     }

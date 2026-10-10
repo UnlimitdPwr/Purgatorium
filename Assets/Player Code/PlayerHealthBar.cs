@@ -36,7 +36,8 @@ public class PlayerHealthBar : MonoBehaviour
         barTransform = GetComponent<RectTransform>();
 
         playerHealth.OnHealthChanged += UpdateHealthBar;
-        playerStats.OnStatsChanged += UpdateBarSize;
+        if (playerStats != null)
+            playerStats.OnStatsChanged += UpdateBarSize;
 
         // This function initializes the health bar to the player's current health percentage.
         float startingHealth =

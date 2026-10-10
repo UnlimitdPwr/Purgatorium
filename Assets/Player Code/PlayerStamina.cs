@@ -30,8 +30,12 @@ public class PlayerStamina : MonoBehaviour
 
     public float CurrentStamina => currentStamina;
 
+    // Used only when the Player has no PlayerStats component.
+    private const float FallbackMaxStamina = 100f;
+
     // Gets maximum stamina from PlayerStats.
-    public float MaxStamina => playerStats.MaxStamina;
+    public float MaxStamina =>
+        playerStats != null ? playerStats.MaxStamina : FallbackMaxStamina;
 
     public float StaminaPercent =>
         MaxStamina > 0f ? currentStamina / MaxStamina : 0f;
@@ -51,6 +55,16 @@ public class PlayerStamina : MonoBehaviour
     {
         // This function initializes stamina and connects the stamina system to PlayerStats.
         playerStats = GetComponent<PlayerStats>();
+
+        if (playerStats == null)
+        {
+            Debug.LogWarning(
+                "PlayerStamina: no PlayerStats on '" + name +
+                "' — using a fallback max stamina of " + FallbackMaxStamina +
+                ". Add PlayerStats (Tools > Level Setup).",
+                this
+            );
+        }
 
         currentStamina = MaxStamina;
 

@@ -10,8 +10,12 @@ public class PlayerHealth : MonoBehaviour
 
     public int CurrentHealth => currentHealth;
 
+    // Used only when the Player has no PlayerStats component.
+    private const int FallbackMaxHealth = 100;
+
     // Gets the player's maximum health from PlayerStats.
-    public int MaxHealth => playerStats.MaxHealth;
+    public int MaxHealth =>
+        playerStats != null ? playerStats.MaxHealth : FallbackMaxHealth;
 
     public event Action<int, int> OnHealthChanged;
 
@@ -19,6 +23,16 @@ public class PlayerHealth : MonoBehaviour
     {
         playerStats = GetComponent<PlayerStats>();
         block = GetComponent<BlockScript>();
+
+        if (playerStats == null)
+        {
+            Debug.LogWarning(
+                "PlayerHealth: no PlayerStats on '" + name +
+                "' — using a fallback max health of " + FallbackMaxHealth +
+                ". Add PlayerStats (Tools > Level Setup).",
+                this
+            );
+        }
 
         currentHealth = MaxHealth;
 

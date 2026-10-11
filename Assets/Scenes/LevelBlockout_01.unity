@@ -19593,7 +19593,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   damage: 20
-  statusOnHit: []
+  statusMultiplier: 1
+  statusOnHit:
+  - status: 1
+    buildup: 20
   attackCooldown: 1
   minComboSwings: 1
   maxComboSwings: 3
@@ -19634,6 +19637,7 @@ MonoBehaviour:
     m_Bits: 256
   edgeLookAhead: 0.15
   ledgeCheckDepth: 2
+  avoidHazards: 1
 --- !u!114 &1778876720
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19845,6 +19849,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyJumpAttack
   damage: 15
+  statusMultiplier: 1
   statusOnHit: []
   minRange: 2.5
   maxRange: 5
@@ -19916,9 +19921,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7fa0ae576cef246a1a6f1945ebafd154, type: 2}
   - {fileID: 11400000, guid: 0f38ac82577db498ea3dc7b44b6a134f, type: 2}
   - {fileID: 11400000, guid: 5e64fe9a4682a44b98654465244cd557, type: 2}
+  buildupRate: 1
+  resistances: []
   debugStatus: 0
   debugAmount: 10
-  resistances: []
 --- !u!114 &1778876732
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22148,6 +22154,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7fa0ae576cef246a1a6f1945ebafd154, type: 2}
   - {fileID: 11400000, guid: 0f38ac82577db498ea3dc7b44b6a134f, type: 2}
   - {fileID: 11400000, guid: 5e64fe9a4682a44b98654465244cd557, type: 2}
+  buildupRate: 1
+  resistances: []
   debugStatus: 0
   debugAmount: 10
 --- !u!114 &2003877439

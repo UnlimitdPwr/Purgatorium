@@ -145,18 +145,28 @@ public class EnemyJumpAttack : MonoBehaviour
     // plain sight, on about the same level and between minRange and
     // maxRange, rolls useChance — and on a hit, checks the leap can actually
     // be made (EnemyJump). True means "start a leap now" (then call Begin).
-    public bool TryChooseLeap(Vector2 targetGround)
+    //
+    // `skipChance`: leap whenever it's possible, without the dice roll or
+    // decisionInterval (used when another enemy is in the way). The cooldown
+    // and range/sight rules still apply.
+    public bool TryChooseLeap(Vector2 targetGround, bool skipChance = false)
     {
-        if (phase != Phase.Idle || cooldownTimer > 0f || Time.time < nextDecisionTime)
+        if (phase != Phase.Idle || cooldownTimer > 0f)
+            return false;
+
+        if (!skipChance && Time.time < nextDecisionTime)
             return false;
 
         if (!InLeapRange(targetGround))
             return false;
 
-        nextDecisionTime = Time.time + decisionInterval;
+        if (!skipChance)
+        {
+            nextDecisionTime = Time.time + decisionInterval;
 
-        if (Random.value >= useChance)
-            return false;
+            if (Random.value >= useChance)
+                return false;
+        }
 
         return jump.CanJump && TryPlanLeap(targetGround, out plannedVelocity);
     }

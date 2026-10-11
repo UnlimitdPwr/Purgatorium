@@ -63,6 +63,11 @@ public class EnemyController : MonoBehaviour
     private float approachX;
     private Vector2 approachLanding;
     private float nextJumpSearchTime;
+    private float nextAllyJumpSearchTime;
+
+    // Set while backing up for a run-up to jump over this other enemy.
+    private Collider2D blockingAlly;
+    private float allyRunUpX;
 
     // True when the last search found no jump and no spot to jump from.
     private bool noWayFound;
@@ -186,6 +191,9 @@ public class EnemyController : MonoBehaviour
         }
 
         float direction = targeting.GetHorizontalDirectionToTarget();
+
+        if (HandleBlockingAlly(direction, true))
+            return;
 
         if (Navigate(direction, GetTargetGround(), true))
             return;
@@ -369,7 +377,8 @@ public class EnemyController : MonoBehaviour
 
     // From a distance, sometimes leap at the player (EnemyJumpAttack decides
     // how often and whether the leap can be made).
-    bool TryStartJumpAttack()
+    // `skipChance`: leap whenever possible (another enemy is in the way).
+    bool TryStartJumpAttack(bool skipChance = false)
     {
         if (jumpAttack == null || jump == null || movement.IsLaunched || !movement.IsGrounded())
             return false;
@@ -386,7 +395,7 @@ public class EnemyController : MonoBehaviour
         if (token != null && !token.CanAcquire)
             return false;
 
-        if (!jumpAttack.TryChooseLeap(targetGround))
+        if (!jumpAttack.TryChooseLeap(targetGround, skipChance))
             return false;
 
         TryTakeAttackTurn();
@@ -464,6 +473,9 @@ public class EnemyController : MonoBehaviour
         }
 
         float direction = patrol.GetDirectionHome();
+
+        if (HandleBlockingAlly(direction, false))
+            return;
 
         // Hop down off the platform, or over the gap/wall, on the way home.
         Vector2 home = new Vector2(patrol.HomeX, movement.GetFeetPosition().y);
@@ -625,6 +637,14 @@ public class EnemyController : MonoBehaviour
             return;
         }
 
+        // Never shove another enemy along.
+        if (movement.GetAllyAhead(direction) != null)
+        {
+            movement.Stop();
+            movement.Face(direction);
+            return;
+        }
+
         if (!movement.CanMove(direction))
         {
             movement.Stop();
@@ -633,6 +653,81 @@ public class EnemyController : MonoBehaviour
         }
 
         movement.Move(direction);
+    }
+
+    // =========================
+    // OTHER ENEMIES IN THE WAY
+    // =========================
+
+    // Another enemy is right in front. Instead of shoving it (into the
+    // player), leap at the player over it, or jump over it — landing behind
+    // the player when there's room — backing up a step first for a run-up
+    // if it's too close to clear. If none of that works, wait.
+    // `chasing`: false when just walking home (no leap, nothing to get behind).
+    bool HandleBlockingAlly(float direction, bool chasing)
+    {
+        Collider2D ally = movement.GetAllyAhead(direction);
+
+        if (ally == null)
+        {
+            // Not backing up for a run-up either — nothing to do.
+            if (blockingAlly == null || !blockingAlly.enabled)
+            {
+                blockingAlly = null;
+                return false;
+            }
+
+            ally = blockingAlly;
+        }
+
+        Vector2 feet = movement.GetFeetPosition();
+
+        if (jump != null && jump.CanJump && Time.time >= nextAllyJumpSearchTime)
+        {
+            nextAllyJumpSearchTime = Time.time + jump.searchInterval;
+
+            if (chasing && TryStartJumpAttack(true))
+            {
+                blockingAlly = null;
+                return true;
+            }
+
+            Bounds targetBounds = default;
+            bool hasTarget = chasing && targeting.TryGetTargetBounds(out targetBounds);
+
+            blockingAlly = null;
+
+            if (jump.TryFindJumpPast(direction, ally.bounds, hasTarget, targetBounds, out Vector2 velocity, out float runUp))
+            {
+                if (velocity != Vector2.zero)
+                {
+                    StartJump(velocity);
+                    return true;
+                }
+
+                blockingAlly = ally;
+                allyRunUpX = runUp;
+            }
+        }
+
+        // Back up for the run-up, still facing the way it's going.
+        if (blockingAlly != null && Mathf.Abs(allyRunUpX - feet.x) > EnemyJump.ApproachTolerance)
+        {
+            float back = Mathf.Sign(allyRunUpX - feet.x);
+
+            if (movement.CanMove(back) && movement.GetAllyAhead(back) == null)
+            {
+                movement.Move(back);
+                movement.Face(direction);
+                return true;
+            }
+
+            blockingAlly = null;
+        }
+
+        movement.Stop();
+        movement.Face(direction);
+        return true;
     }
 
     static bool IsAlertState(EnemyState s)
@@ -651,6 +746,7 @@ public class EnemyController : MonoBehaviour
 
         // A jump-from spot belongs to whatever the enemy was doing before.
         hasApproachPoint = false;
+        blockingAlly = null;
 
         // Every time the enemy closes in to attack, it throws a fresh combo.
         if (next == EnemyState.Attack)

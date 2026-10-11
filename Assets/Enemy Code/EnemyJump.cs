@@ -30,6 +30,11 @@ public class EnemyJump : MonoBehaviour
     [Tooltip("Fastest the enemy travels sideways in a jump, as a multiple of EnemyMovement.moveSpeed.")]
     public float maxAirSpeedMultiplier = 1.5f;
 
+    [Tooltip("Fastest the enemy travels sideways when jumping over another enemy that's in its way, " +
+             "as a multiple of EnemyMovement.moveSpeed — a lunge, so it can clear the other enemy and " +
+             "land behind the player.")]
+    public float jumpOverAirSpeedMultiplier = 2.5f;
+
     [Tooltip("A ledge must be at least this far below the top of the jump, so the feet clear its edge.")]
     public float ledgeClearance = 0.2f;
 
@@ -78,6 +83,17 @@ public class EnemyJump : MonoBehaviour
     public const float ApproachTolerance = 0.15f;
 
     private readonly List<Candidate> candidates = new List<Candidate>();
+    private readonly List<float> pastCandidates = new List<float>();
+    private readonly List<Vector2> landingCandidates = new List<Vector2>();
+
+    // How far back the enemy will step to get a run-up over another enemy.
+    private static readonly float[] RunUpDistances = { 0f, 0.5f, 1f, 1.5f };
+
+    // Other enemies (and, for some landings, the player) count as obstacles
+    // too: a jump never goes through another enemy or lands on one.
+    private static readonly RaycastHit2D[] bodyHits = new RaycastHit2D[8];
+    private static readonly Collider2D[] bodyOverlaps = new Collider2D[8];
+    private static ContactFilter2D solidBodies = new ContactFilter2D { useTriggers = false };
 
     private struct Candidate
     {
@@ -346,6 +362,100 @@ public class EnemyJump : MonoBehaviour
         return TryPlan(movement.GetFeetPosition(), landing, resolvedJumpHeight, ledgeClearance, MaxAirSpeed, out velocity);
     }
 
+    // Another enemy (`blocker`, its body) is in the way. Finds a jump over it
+    // on about the same level: behind the player when there's room there
+    // (`target`, the player's body — pass hasTarget false when there's no
+    // player to get behind), otherwise just past the blocker.
+    //
+    // Standing right behind the blocker, the arc would clip its head on the
+    // way up, so this also tries taking off from a little further back. True
+    // when a jump was found: either `velocity` to jump with now, or (velocity
+    // zero) `runUpX`, the spot to back up to and search again from.
+    public bool TryFindJumpPast(float direction, Bounds blocker, bool hasTarget, Bounds target,
+                                out Vector2 velocity, out float runUpX)
+    {
+        velocity = Vector2.zero;
+        runUpX = 0f;
+
+        Vector2 feet = movement.GetFeetPosition();
+        float sign = Mathf.Sign(direction);
+        float halfWidth = GetBodySize().x * 0.5f;
+        float maxRise = resolvedJumpHeight - ledgeClearance;
+
+        // Where it could land, best first.
+        pastCandidates.Clear();
+
+        if (hasTarget)
+        {
+            float behindPlayer = (sign > 0f ? target.max.x : target.min.x) + sign * (halfWidth + 0.2f);
+
+            for (int i = 0; i < 4; i++)
+                pastCandidates.Add(behindPlayer + sign * i * ScanStep);
+        }
+
+        float pastBlocker = (sign > 0f ? blocker.max.x : blocker.min.x) + sign * (halfWidth + 0.1f);
+
+        for (int i = 0; i < 4; i++)
+            pastCandidates.Add(pastBlocker + sign * i * ScanStep);
+
+        landingCandidates.Clear();
+
+        foreach (float x in pastCandidates)
+        {
+            if (!TryGetSurface(new Vector2(x, feet.y + maxRise), maxRise + SameLevel, out float surfaceY))
+                continue;
+
+            if (surfaceY < feet.y - SameLevel)
+                continue;
+
+            Vector2 landing = new Vector2(x, surfaceY);
+
+            if (HasFooting(landing, sign))
+                landingCandidates.Add(landing);
+        }
+
+        if (landingCandidates.Count == 0)
+            return false;
+
+        // From here first, then from further back.
+        foreach (float back in RunUpDistances)
+        {
+            Vector2 start = feet;
+
+            if (back > 0f)
+            {
+                start.x -= sign * back;
+
+                // Somewhere to stand back there, on the same level.
+                if (!TryGetSurface(new Vector2(start.x, feet.y + 0.5f), 1f, out float standY) ||
+                    Mathf.Abs(standY - feet.y) > SameLevel ||
+                    !HasRoomToStand(new Vector2(start.x, standY), true))
+                    break;
+
+                start.y = standY;
+            }
+
+            foreach (Vector2 landing in landingCandidates)
+            {
+                if (Mathf.Abs(landing.x - start.x) > maxJumpDistance)
+                    continue;
+
+                if (!TryPlan(start, landing, resolvedJumpHeight, ledgeClearance,
+                             movement.moveSpeed * jumpOverAirSpeedMultiplier, out Vector2 v, true))
+                    continue;
+
+                if (back > 0f)
+                    runUpX = start.x;
+                else
+                    velocity = v;
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     // A short hop of about `distance` toward `direction` that lands on the
     // same level (used for backing off after attacking). Tries a shorter hop
     // if the full one would go off a ledge or into a wall.
@@ -482,7 +592,10 @@ public class EnemyJump : MonoBehaviour
     // peaks `peak` above `from`, then flies it in a simulation to make sure
     // nothing gets in the way. `clearance` = how far above the landing the
     // peak must be.
-    bool TryPlan(Vector2 from, Vector2 landing, float peak, float clearance, float maxSpeed, out Vector2 velocity)
+    // `avoidPlayer`: also reject landing on the player (other enemies are
+    // always avoided).
+    bool TryPlan(Vector2 from, Vector2 landing, float peak, float clearance, float maxSpeed, out Vector2 velocity,
+                 bool avoidPlayer = false)
     {
         velocity = Vector2.zero;
 
@@ -502,7 +615,7 @@ public class EnemyJump : MonoBehaviour
         if (Mathf.Abs(vx) > maxSpeed)
             return false;
 
-        if (!HasRoomToStand(landing))
+        if (!HasRoomToStand(landing, avoidPlayer))
             return false;
 
         if (movement.IsHazardAt(landing, GetBodySize()))
@@ -576,19 +689,63 @@ public class EnemyJump : MonoBehaviour
                 Physics2D.BoxCast(position + feetToCentre, boxSize, 0f, step / distance, distance, movement.groundLayer))
                 return false;
 
+            if (distance > 0f && HitsOtherEnemy(position + feetToCentre, boxSize, step / distance, distance))
+                return false;
+
             position = next;
         }
 
         return false;
     }
 
-    // True when a body standing with its feet at `feet` overlaps no ground.
-    bool HasRoomToStand(Vector2 feet)
+    // True when a body standing with its feet at `feet` overlaps no ground
+    // and no other enemy (nor the player, with `avoidPlayer`).
+    bool HasRoomToStand(Vector2 feet, bool avoidPlayer = false)
     {
         Vector2 bodySize = GetBodySize();
         Vector2 boxSize = new Vector2(bodySize.x * 0.9f, Mathf.Max(0.05f, bodySize.y - Skin * 2f));
+        Vector2 centre = feet + new Vector2(0f, bodySize.y * 0.5f);
 
-        return !Physics2D.OverlapBox(feet + new Vector2(0f, bodySize.y * 0.5f), boxSize, 0f, movement.groundLayer);
+        if (Physics2D.OverlapBox(centre, boxSize, 0f, movement.groundLayer))
+            return false;
+
+        int count = Physics2D.OverlapBox(centre, boxSize, 0f, solidBodies, bodyOverlaps);
+
+        for (int i = 0; i < count; i++)
+        {
+            if (IsOtherEnemy(bodyOverlaps[i]))
+                return false;
+
+            if (avoidPlayer && IsPlayer(bodyOverlaps[i]))
+                return false;
+        }
+
+        return true;
+    }
+
+    bool HitsOtherEnemy(Vector2 origin, Vector2 size, Vector2 direction, float distance)
+    {
+        int count = Physics2D.BoxCast(origin, size, 0f, direction, solidBodies, bodyHits, distance);
+
+        for (int i = 0; i < count; i++)
+        {
+            if (IsOtherEnemy(bodyHits[i].collider))
+                return true;
+        }
+
+        return false;
+    }
+
+    bool IsOtherEnemy(Collider2D other)
+    {
+        Rigidbody2D otherBody = other.attachedRigidbody;
+        return otherBody != null && otherBody != rb && otherBody.GetComponent<EnemyController>() != null;
+    }
+
+    static bool IsPlayer(Collider2D other)
+    {
+        Rigidbody2D otherBody = other.attachedRigidbody;
+        return otherBody != null && otherBody.CompareTag("Player");
     }
 
     Vector2 GetBodySize()

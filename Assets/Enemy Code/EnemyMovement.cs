@@ -22,6 +22,10 @@ public class EnemyMovement : MonoBehaviour
     [Tooltip("How far down to look for ground in front before calling it a ledge.")]
     public float ledgeCheckDepth = 1f;
 
+    [Tooltip("How far past the front of the body to look for another enemy in the way. " +
+             "The enemy jumps over it or waits, instead of shoving it along.")]
+    public float allyLookAhead = 0.3f;
+
     // =========================
     // HAZARDS
     // =========================
@@ -277,6 +281,39 @@ public class EnemyMovement : MonoBehaviour
 
     // The enemy's body collider (null if it has none). EnemyJump sizes its
     // landing and arc checks from this.
+    // =========================
+    // OTHER ENEMIES
+    // =========================
+
+    private static readonly RaycastHit2D[] allyHits = new RaycastHit2D[8];
+    private static ContactFilter2D solidBodies = new ContactFilter2D { useTriggers = false };
+
+    // The body of another enemy right in front, or null. Walking on would
+    // push it (and maybe shove it into the player).
+    public Collider2D GetAllyAhead(float direction)
+    {
+        if (direction == 0f || body == null)
+            return null;
+
+        float sign = Mathf.Sign(direction);
+        Bounds bounds = body.bounds;
+
+        Vector2 size = new Vector2(0.05f, bounds.size.y * 0.8f);
+        int count = Physics2D.BoxCast(bounds.center, size, 0f, new Vector2(sign, 0f), solidBodies,
+                                      allyHits, bounds.extents.x + allyLookAhead);
+
+        for (int i = 0; i < count; i++)
+        {
+            Collider2D other = allyHits[i].collider;
+            Rigidbody2D otherBody = other.attachedRigidbody;
+
+            if (otherBody != null && otherBody != rb && otherBody.GetComponent<EnemyController>() != null)
+                return other;
+        }
+
+        return null;
+    }
+
     public Collider2D GetBody()
     {
         return body;

@@ -38,54 +38,87 @@ public class InventorySystem : MonoBehaviour
         }
     }
 
-    // This function attempts to add an item and its quantity to the inventory.
     public bool AddItem(ItemData item, int amount = 1)
     {
-        if (item == null || amount <= 0)
+        // This function adds items to existing stacks or empty inventory slots
+        // and notifies the UI when the inventory changes.
+        if (item == null || amount <= 0 || item.maxStack <= 0)
             return false;
 
-        // First, try to add the item to an existing stack.
+        int originalAmount = amount;
+
+        // First, add items to existing stacks of the same item.
         for (int i = 0; i < slots.Count; i++)
         {
             if (!slots[i].IsEmpty() &&
                 slots[i].item == item &&
                 slots[i].amount < item.maxStack)
             {
-                int availableSpace =
-                    item.maxStack - slots[i].amount;
-
-                int amountToAdd =
-                    Mathf.Min(availableSpace, amount);
+                int availableSpace = item.maxStack - slots[i].amount;
+                int amountToAdd = Mathf.Min(availableSpace, amount);
 
                 slots[i].amount += amountToAdd;
                 amount -= amountToAdd;
 
                 if (amount <= 0)
+                {
+                    // Notify the UI after successfully adding the full amount.
+                    OnInventoryChanged?.Invoke();
                     return true;
+                }
             }
         }
 
-        // If the existing stacks cannot hold everything,
-        // look for an empty slot.
+        // Next, add remaining items to empty slots.
         for (int i = 0; i < slots.Count; i++)
         {
             if (slots[i].IsEmpty())
             {
-                int amountToAdd =
-                    Mathf.Min(item.maxStack, amount);
+                int amountToAdd = Mathf.Min(item.maxStack, amount);
 
                 slots[i].item = item;
                 slots[i].amount = amountToAdd;
-
                 amount -= amountToAdd;
 
                 if (amount <= 0)
+                {
+                    // Notify the UI after successfully adding the full amount.
+                    OnInventoryChanged?.Invoke();
                     return true;
+                }
             }
         }
 
-        // The inventory could not hold the entire amount.
+        // Roll back partial additions if the inventory cannot fit the full amount.
+        int amountAdded = originalAmount - amount;
+
+        if (amountAdded > 0)
+        {
+            RemoveItemWithoutNotification(item, amountAdded);
+        }
+
         return false;
+    }
+
+    // This function removes items without firing an inventory event during rollback.
+    private void RemoveItemWithoutNotification(ItemData item, int amount)
+    {
+        // This function reverses a partial addition when the inventory lacks sufficient capacity.
+        int remaining = amount;
+
+        for (int i = slots.Count - 1; i >= 0 && remaining > 0; i--)
+        {
+            if (slots[i].IsEmpty() || slots[i].item != item)
+                continue;
+
+            int amountToRemove = Mathf.Min(slots[i].amount, remaining);
+
+            slots[i].amount -= amountToRemove;
+            remaining -= amountToRemove;
+
+            if (slots[i].amount <= 0)
+                slots[i].Clear();
+        }
     }
 
     // This function returns the inventory slot at the requested index.

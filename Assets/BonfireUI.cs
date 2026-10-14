@@ -14,6 +14,9 @@ public class BonfireUI : MonoBehaviour
     [SerializeField] private GameObject statsPanel;
     [SerializeField] private BonfireStatsUI bonfireStatsUI;
 
+    [Header("Equipment UI")]
+    [SerializeField] private GameObject equipmentPanel;
+
     [Header("Canvas Groups")]
     [SerializeField] private CanvasGroup bonfireCanvasGroup;
     [SerializeField] private CanvasGroup playerHUDCanvasGroup;
@@ -23,6 +26,7 @@ public class BonfireUI : MonoBehaviour
 
     private PlayerController1 playerController;
     private Bonfire currentBonfire;
+    public bool IsEquipmentScreenOpen { get; private set; }
 
     private Coroutine transitionCoroutine;
 
@@ -47,6 +51,14 @@ public class BonfireUI : MonoBehaviour
         playerHUDCanvasGroup.alpha = 1f;
         playerHUDCanvasGroup.interactable = true;
         playerHUDCanvasGroup.blocksRaycasts = true;
+
+        // This function ensures the equipment screen starts hidden.
+        IsEquipmentScreenOpen = false;
+
+        if (equipmentPanel != null)
+        {
+            equipmentPanel.SetActive(false);
+        }
     }
 
 
@@ -60,8 +72,16 @@ public class BonfireUI : MonoBehaviour
         playerController = player.GetComponent<PlayerController1>();
         currentBonfire = bonfire;
 
+        // This function ensures every bonfire visit starts at the main menu.
+        IsEquipmentScreenOpen = false;
+
         mainPanel.SetActive(true);
         statsPanel.SetActive(false);
+
+        if (equipmentPanel != null)
+        {
+            equipmentPanel.SetActive(false);
+        }
 
         if (transitionCoroutine != null)
         {
@@ -145,15 +165,20 @@ public class BonfireUI : MonoBehaviour
     }
 
 
+
     public void Close()
     {
-        // Mark the bonfire menu as closed.
+        // This function closes all Bonfire UI screens and marks the equipment screen as closed.
         IsOpen = false;
-
-        // This function immediately hides the Bonfire UI.
+        IsEquipmentScreenOpen = false;
 
         mainPanel.SetActive(true);
         statsPanel.SetActive(false);
+
+        if (equipmentPanel != null)
+        {
+            equipmentPanel.SetActive(false);
+        }
 
         bonfireCanvasGroup.alpha = 0f;
         bonfireCanvasGroup.interactable = false;
@@ -161,12 +186,13 @@ public class BonfireUI : MonoBehaviour
     }
 
 
+
+
     public void Leave()
     {
-        // Mark the bonfire menu as closed when returning to gameplay.
+        // This function exits the Bonfire, closes the equipment screen, and restores gameplay UI.
         IsOpen = false;
-
-        // This function exits the Bonfire resting state and restores the player's normal HUD.
+        IsEquipmentScreenOpen = false;
 
         if (playerController == null)
             return;
@@ -175,6 +201,11 @@ public class BonfireUI : MonoBehaviour
 
         mainPanel.SetActive(true);
         statsPanel.SetActive(false);
+
+        if (equipmentPanel != null)
+        {
+            equipmentPanel.SetActive(false);
+        }
 
         bonfireCanvasGroup.alpha = 0f;
         bonfireCanvasGroup.interactable = false;
@@ -188,4 +219,36 @@ public class BonfireUI : MonoBehaviour
 
         Debug.Log("Player left the bonfire.");
     }
+
+
+
+
+    public void OpenEquipment()
+    {
+        // This function opens the equipment screen from the main Bonfire menu.
+        if (!IsOpen || equipmentPanel == null)
+            return;
+
+        IsEquipmentScreenOpen = true;
+
+        mainPanel.SetActive(false);
+        statsPanel.SetActive(false);
+        equipmentPanel.SetActive(true);
+    }
+
+    public void CloseEquipment()
+    {
+        // This function closes the equipment screen and returns to the main Bonfire menu.
+        if (equipmentPanel != null)
+        {
+            equipmentPanel.SetActive(false);
+        }
+
+        IsEquipmentScreenOpen = false;
+
+        mainPanel.SetActive(true);
+        statsPanel.SetActive(false);
+    }
+
+
 }

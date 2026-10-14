@@ -17,3 +17,4 @@ MonoBehaviour:
   worldSprite: {fileID: 21300108, guid: 7810966f0f690954c87305933cabf2b0, type: 3}
   inventoryIcon: {fileID: 21300036, guid: 7810966f0f690954c87305933cabf2b0, type: 3}
   maxStack: 10
+  equipmentType: 2

@@ -1,3 +1,4 @@
+
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "NewItem", menuName = "Inventory/Item")]
@@ -15,4 +16,7 @@ public class ItemData : ScriptableObject
 
     [Header("Inventory")]
     public int maxStack = 99;
+
+    [Header("Equipment")]
+    public EquipmentSlotType equipmentType = EquipmentSlotType.Other;
 }

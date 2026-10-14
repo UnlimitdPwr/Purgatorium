@@ -7,6 +7,7 @@ public class PlayerHealth : MonoBehaviour
 
     private PlayerStats playerStats;
     private BlockScript block;
+    private PlayerStatusEffects status;
 
     public int CurrentHealth => currentHealth;
 
@@ -23,6 +24,7 @@ public class PlayerHealth : MonoBehaviour
     {
         playerStats = GetComponent<PlayerStats>();
         block = GetComponent<BlockScript>();
+        status = GetComponent<PlayerStatusEffects>();
 
         if (playerStats == null)
         {
@@ -91,8 +93,26 @@ public class PlayerHealth : MonoBehaviour
         OnHealthChanged?.Invoke(currentHealth, MaxHealth);
     }
 
+    // Drops health straight to 0 (e.g. a full curse bar). PlayerDeath
+    // picks it up from OnHealthChanged like any other death.
+    public void Kill()
+    {
+        if (currentHealth <= 0)
+            return;
+
+        currentHealth = 0;
+
+        Debug.Log("PLAYER KILLED OUTRIGHT");
+
+        OnHealthChanged?.Invoke(currentHealth, MaxHealth);
+    }
+
     public void Heal(int amount)
     {
+        // A status condition can reduce healing.
+        if (status != null)
+            amount = Mathf.RoundToInt(amount * status.HealingMultiplier);
+
         if (amount <= 0)
             return;
 

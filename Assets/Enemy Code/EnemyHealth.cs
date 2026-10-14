@@ -18,11 +18,6 @@ public class EnemyHealth : MonoBehaviour
              "parryPrimaryAmount — parries are meant to fill the secondary bar faster.")]
     [SerializeField] private float parrySecondaryAmount = 20f;
 
-    [Header("Status Effects")]
-    [Tooltip("Added to the primary bar by a status effect. Nothing calls " +
-             "ApplyStatusEffect() yet — this is here for that future system.")]
-    [SerializeField] private float statusEffectAmount = 10f;
-
     // Both bars start empty and fill up, rather than starting full and draining.
     private float primaryValue;
     private float secondaryValue;
@@ -48,18 +43,28 @@ public class EnemyHealth : MonoBehaviour
     // Called by EnemyHitbox on a successful parry against this enemy.
     public void ApplyParry()
     {
+        // A status condition can make parries fill the secondary bar faster.
+        EnemyStatusEffects status = GetComponent<EnemyStatusEffects>();
+        float secondaryMultiplier = status != null ? status.ParrySecondaryMultiplier : 1f;
+
         AddPrimary(parryPrimaryAmount);
-        AddSecondary(parrySecondaryAmount);
+        AddSecondary(parrySecondaryAmount * secondaryMultiplier);
     }
 
     // =========================
-    // STATUS EFFECTS (future)
+    // STATUS EFFECTS
     // =========================
 
-    // Not called anywhere yet — the hook a future status-effect system uses.
-    public void ApplyStatusEffect()
+    // Called by EnemyStatusEffects each tick of an active status condition.
+    public void ApplyStatusDamage(float amount)
     {
-        AddPrimary(statusEffectAmount);
+        AddPrimary(amount);
+    }
+
+    // Called by HazardReceiver each tick the enemy stands in a damaging hazard.
+    public void ApplyHazardDamage(float amount)
+    {
+        AddPrimary(amount);
     }
 
     // =========================

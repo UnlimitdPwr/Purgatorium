@@ -37,8 +37,10 @@ public class EnemyDetection : MonoBehaviour
 
     private Transform player;
     private Collider2D playerCollider;
+    private PlayerDeath playerDeath;
     private Collider2D body;
     private EnemyMovement movement;
+    private EnemyStatusEffects status;
 
     private float lastSensedTime = float.NegativeInfinity;
     private bool alerted;
@@ -47,6 +49,7 @@ public class EnemyDetection : MonoBehaviour
     {
         movement = GetComponent<EnemyMovement>();
         body = GetComponent<Collider2D>();
+        status = GetComponent<EnemyStatusEffects>();
 
         if (obstacleMask == 0)
             obstacleMask = LayerMask.GetMask("Ground");
@@ -68,6 +71,14 @@ public class EnemyDetection : MonoBehaviour
 
         if (player == null)
             return false;
+
+        // A dead player is invisible: the enemy forgets them and goes back
+        // to patrolling.
+        if (IsPlayerDead())
+        {
+            lastSensedTime = float.NegativeInfinity;
+            return false;
+        }
 
         bool sensed = CanHearPlayer() || CanSeePlayer();
 
@@ -95,6 +106,11 @@ public class EnemyDetection : MonoBehaviour
         return null;
     }
 
+    public bool IsPlayerDead()
+    {
+        return playerDeath != null && playerDeath.IsDead;
+    }
+
     // EnemyController sets this while the enemy is fighting the player.
     public void SetAlerted(bool value)
     {
@@ -105,7 +121,7 @@ public class EnemyDetection : MonoBehaviour
     // nothing in the way (not heard, remembered or tracked).
     public bool CanSeePlayerNow()
     {
-        if (player == null)
+        if (player == null || IsPlayerDead())
             return false;
 
         bool wasAlerted = alerted;
@@ -135,7 +151,10 @@ public class EnemyDetection : MonoBehaviour
         Vector2 toPlayer = target - eye;
         float distance = toPlayer.magnitude;
 
-        if (distance > detectionRange)
+        // A status condition can shorten sight (hearing is unaffected).
+        float range = status != null ? detectionRange * status.SightRangeMultiplier : detectionRange;
+
+        if (distance > range)
             return false;
 
         // Already after the player: range is all that matters.
@@ -179,6 +198,7 @@ public class EnemyDetection : MonoBehaviour
 
         player = playerObject.transform;
         playerCollider = playerObject.GetComponent<Collider2D>();
+        playerDeath = playerObject.GetComponent<PlayerDeath>();
     }
 
     // =========================

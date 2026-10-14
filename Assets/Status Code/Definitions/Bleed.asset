@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99bf2f4c5400f4d9f937abcdfaf1885f, type: 3}
+  m_Name: Bleed
+  m_EditorClassIdentifier: Assembly-CSharp::StatusEffectDefinition
+  type: 2
+  displayName: Bleed
+  barColor: {r: 0.8, g: 0.08, b: 0.12, a: 1}
+  threshold: 50
+  recedeDelay: 2
+  recedeRate: 10
+  conditionDuration: 10
+  onPlayer:
+    damageOverTime:
+      enabled: 1
+      damagePerTick: 2
+      tickInterval: 1
+    burstDamageOnStart:
+      enabled: 0
+      damage: 15
+    instantDeath:
+      enabled: 0
+    slowMovement:
+      enabled: 0
+      multiplier: 0.7
+    weakerJump:
+      enabled: 0
+      multiplier: 0.6
+    staminaDrain:
+      enabled: 0
+      drainPerSecond: 5
+    slowerStaminaRegen:
+      enabled: 0
+      multiplier: 0.5
+    dashSprintDisabled:
+      enabled: 0
+      disableDash: 1
+      disableSprint: 1
+    weakerBlock:
+      enabled: 0
+      effectiveness: 0.5
+      disableBlock: 0
+    weakerParry:
+      enabled: 0
+      windowMultiplier: 0.5
+      disableParry: 0
+    reducedHealing:
+      enabled: 0
+      multiplier: 0.5
+  onEnemy:
+    damageOverTime:
+      enabled: 1
+      damagePerTick: 5
+      tickInterval: 1
+    burstDamageOnStart:
+      enabled: 0
+      damage: 15
+    slowMovement:
+      enabled: 0
+      multiplier: 0.7
+    slowerAttacks:
+      enabled: 0
+      multiplier: 1.5
+    weakerAttacks:
+      enabled: 0
+      multiplier: 0.75
+    parryVulnerability:
+      enabled: 0
+      multiplier: 1.5
+    stunOnStart:
+      enabled: 0
+      duration: 1
+    blinded:
+      enabled: 0
+      multiplier: 0.5
+    cannotJump:
+      enabled: 0

@@ -58,6 +58,7 @@ public class EnemyJump : MonoBehaviour
     private Rigidbody2D rb;
     private EnemyMovement movement;
     private EnemyAnimation anim;
+    private EnemyStatusEffects status;
 
     private float resolvedJumpHeight;
     private float cooldownTimer;
@@ -89,6 +90,7 @@ public class EnemyJump : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         movement = GetComponent<EnemyMovement>();
         anim = GetComponent<EnemyAnimation>();
+        status = GetComponent<EnemyStatusEffects>();
 
         resolvedJumpHeight = jumpHeight;
     }
@@ -125,7 +127,11 @@ public class EnemyJump : MonoBehaviour
     public float Gravity => -Physics2D.gravity.y * rb.gravityScale;
 
     // Standing on the ground and not just landed.
-    public bool CanJump => cooldownTimer <= 0f && !movement.IsLaunched && movement.IsGrounded();
+    public bool CanJump => JumpAllowed && cooldownTimer <= 0f && !movement.IsLaunched && movement.IsGrounded();
+
+    // False while a status condition forbids jumping (also stops leaps and
+    // retreat hops).
+    public bool JumpAllowed => status == null || !status.CannotJump;
 
     // =========================
     // JUMPING
@@ -497,6 +503,9 @@ public class EnemyJump : MonoBehaviour
             return false;
 
         if (!HasRoomToStand(landing))
+            return false;
+
+        if (movement.IsHazardAt(landing, GetBodySize()))
             return false;
 
         velocity = new Vector2(vx, vy);

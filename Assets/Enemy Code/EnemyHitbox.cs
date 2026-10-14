@@ -5,7 +5,13 @@ public class EnemyHitbox : MonoBehaviour
     private Collider2D hitbox;
 
     private int damage;
+    private StatusInfliction[] statusOnHit;
+    private float statusMultiplier = 1f;
     private bool canDamage;
+
+    // The enemy's own statuses (its "element") — added to every hit this
+    // hitbox lands, whichever attack switched it on.
+    private EnemyStatusOnHit enemyStatus;
 
     // The hitbox is laid out in the scene for an enemy facing right (the way
     // the sprite art faces). These remember that layout so SetFacing() can
@@ -16,6 +22,7 @@ public class EnemyHitbox : MonoBehaviour
     void Awake()
     {
         hitbox = GetComponent<Collider2D>();
+        enemyStatus = GetComponentInParent<EnemyStatusOnHit>();
 
         if (hitbox == null)
         {
@@ -84,9 +91,13 @@ public class EnemyHitbox : MonoBehaviour
         hitbox.offset = offset;
     }
 
-    public void EnableHitbox(int damageAmount)
+    // `statuses`: extra statuses only this attack adds. `multiplier` scales
+    // the enemy's own statuses (EnemyStatusOnHit) for this attack.
+    public void EnableHitbox(int damageAmount, StatusInfliction[] statuses = null, float multiplier = 1f)
     {
         damage = damageAmount;
+        statusOnHit = statuses;
+        statusMultiplier = multiplier;
         canDamage = true;
 
         hitbox.enabled = true;
@@ -100,6 +111,26 @@ public class EnemyHitbox : MonoBehaviour
         hitbox.enabled = false;
 
         Debug.Log("Enemy hitbox OFF");
+    }
+
+    private static void ApplyStatuses(IStatusReceiver receiver, StatusInfliction[] inflictions, float multiplier, BlockScript block)
+    {
+        if (inflictions == null || multiplier <= 0f)
+            return;
+
+        foreach (StatusInfliction infliction in inflictions)
+        {
+            if (infliction == null)
+                continue;
+
+            float buildup = infliction.buildup * multiplier;
+
+            if (block != null)
+                buildup = block.GetBlockedStatusBuildup(buildup);
+
+            if (buildup > 0f)
+                receiver.AddBuildup(infliction.status, buildup);
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -156,7 +187,24 @@ public class EnemyHitbox : MonoBehaviour
 
         Debug.Log("PLAYER HIT! Applying " + damage + " damage.");
 
+        // Checked before TakeDamage, which reduces the damage itself.
+        BlockScript block = other.GetComponentInParent<BlockScript>();
+        bool blocked = block != null && block.IsBlocking;
+
         playerHealth.TakeDamage(damage);
+
+        // Status buildup rides on the hit: the enemy's own statuses (scaled
+        // for this attack) plus any extras the attack adds. A parried hit
+        // never gets here, so parrying stops all of it; blocking stops part.
+        IStatusReceiver receiver = other.GetComponentInParent<IStatusReceiver>();
+
+        if (receiver != null)
+        {
+            if (enemyStatus != null)
+                ApplyStatuses(receiver, enemyStatus.inflictions, statusMultiplier, blocked ? block : null);
+
+            ApplyStatuses(receiver, statusOnHit, 1f, blocked ? block : null);
+        }
 
         // Push the player away from the enemy's body (not the hitbox, which
         // can sit past the player's center when they're overlapping).

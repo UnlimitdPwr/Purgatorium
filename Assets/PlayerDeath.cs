@@ -75,6 +75,10 @@ public class PlayerDeath : MonoBehaviour
 
         transform.position = respawnPoint.position;
 
+        // Dying resets the world like resting does: every enemy comes back,
+        // fresh, where it was placed.
+        EnemyRespawn.RespawnAll();
+
         PlayerHealth health = GetComponent<PlayerHealth>();
 
         if (health != null)
@@ -82,7 +86,13 @@ public class PlayerDeath : MonoBehaviour
             health.RestoreFullHealth();
         }
 
-        
+        PlayerStatusEffects status = GetComponent<PlayerStatusEffects>();
+
+        if (status != null)
+        {
+            status.ClearAll();
+        }
+
 
         if (controller != null)
             controller.enabled = true;

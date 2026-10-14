@@ -11,6 +11,7 @@ public class PlayerController1 : MonoBehaviour
     private PlayerKnockback knockback;
     private WallJumpScript wallJump;
     private LadderClimbScript ladderClimb;
+    private PlayerStatusEffects status;
 
     private bool isResting;
 
@@ -27,6 +28,7 @@ public class PlayerController1 : MonoBehaviour
         knockback = GetComponent<PlayerKnockback>();
         wallJump = GetComponent<WallJumpScript>();
         ladderClimb = GetComponent<LadderClimbScript>();
+        status = GetComponent<PlayerStatusEffects>();
     }
 
     void Update()
@@ -142,6 +144,10 @@ public class PlayerController1 : MonoBehaviour
 
     void HandleParry()
     {
+        // A status condition can stop parrying altogether.
+        if (status != null && status.ParryDisabled)
+            return;
+
         if (playerInput.ParryPressed)
             parry.TryParry();
     }
@@ -155,9 +161,13 @@ public class PlayerController1 : MonoBehaviour
         if (dash == null)
             return;
 
-        dash.SetDashHeld(playerInput.DashHeld);
+        // Status conditions can switch off sprinting and/or dashing.
+        bool sprintDisabled = status != null && status.SprintDisabled;
+        bool dashDisabled = status != null && status.DashDisabled;
 
-        if (playerInput.DashPressed)
+        dash.SetDashHeld(playerInput.DashHeld && !sprintDisabled);
+
+        if (playerInput.DashPressed && !dashDisabled)
             dash.TryDash();
     }
 
@@ -168,7 +178,9 @@ public class PlayerController1 : MonoBehaviour
         if (block == null)
             return;
 
-        if (playerInput.BlockHeld)
+        bool blockDisabled = status != null && status.BlockDisabled;
+
+        if (playerInput.BlockHeld && !blockDisabled)
             block.StartBlocking();
         else
             block.StopBlocking();

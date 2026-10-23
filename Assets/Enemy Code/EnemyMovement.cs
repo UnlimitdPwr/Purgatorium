@@ -65,6 +65,9 @@ public class EnemyMovement : MonoBehaviour
         knockback = GetComponent<EnemyKnockback>();
         hazards = GetComponent<HazardReceiver>();
         status = GetComponent<EnemyStatusEffects>();
+
+        solidBodies = new ContactFilter2D { useTriggers = false };
+        solidBodies.SetLayerMask(~groundLayer);
     }
 
     void FixedUpdate()
@@ -285,8 +288,10 @@ public class EnemyMovement : MonoBehaviour
     // OTHER ENEMIES
     // =========================
 
-    private static readonly RaycastHit2D[] allyHits = new RaycastHit2D[8];
-    private static ContactFilter2D solidBodies = new ContactFilter2D { useTriggers = false };
+    private static readonly RaycastHit2D[] allyHits = new RaycastHit2D[16];
+
+    // Solid bodies only — level geometry is left out (see Awake).
+    private ContactFilter2D solidBodies;
 
     // The body of another enemy right in front, or null. Walking on would
     // push it (and maybe shove it into the player).

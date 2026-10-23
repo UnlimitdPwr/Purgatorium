@@ -79,6 +79,10 @@ public class EnemyJump : MonoBehaviour
     // Surfaces closer than this in height count as "the same level".
     private const float SameLevel = 0.3f;
 
+    // Extra room kept around other enemies (on top of the full body size),
+    // so a jump over one doesn't brush it and nudge it along.
+    private const float EnemyClearance = 0.2f;
+
     // How close the enemy has to get to a jump-from spot to count as there.
     public const float ApproachTolerance = 0.15f;
 
@@ -91,9 +95,12 @@ public class EnemyJump : MonoBehaviour
 
     // Other enemies (and, for some landings, the player) count as obstacles
     // too: a jump never goes through another enemy or lands on one.
-    private static readonly RaycastHit2D[] bodyHits = new RaycastHit2D[8];
-    private static readonly Collider2D[] bodyOverlaps = new Collider2D[8];
-    private static ContactFilter2D solidBodies = new ContactFilter2D { useTriggers = false };
+    private static readonly RaycastHit2D[] bodyHits = new RaycastHit2D[16];
+    private static readonly Collider2D[] bodyOverlaps = new Collider2D[16];
+
+    // Solid bodies only — level geometry is left out, so it can't fill the
+    // result buffers and crowd out the enemy being looked for.
+    private ContactFilter2D solidBodies;
 
     private struct Candidate
     {
@@ -109,6 +116,9 @@ public class EnemyJump : MonoBehaviour
         status = GetComponent<EnemyStatusEffects>();
 
         resolvedJumpHeight = jumpHeight;
+
+        solidBodies = new ContactFilter2D { useTriggers = false };
+        solidBodies.SetLayerMask(~movement.groundLayer);
     }
 
     // Start rather than Awake: this reads another object (the player), and
@@ -689,7 +699,7 @@ public class EnemyJump : MonoBehaviour
                 Physics2D.BoxCast(position + feetToCentre, boxSize, 0f, step / distance, distance, movement.groundLayer))
                 return false;
 
-            if (distance > 0f && HitsOtherEnemy(position + feetToCentre, boxSize, step / distance, distance))
+            if (distance > 0f && HitsOtherEnemy(position + feetToCentre, bodySize + Vector2.one * EnemyClearance, step / distance, distance))
                 return false;
 
             position = next;
@@ -709,7 +719,9 @@ public class EnemyJump : MonoBehaviour
         if (Physics2D.OverlapBox(centre, boxSize, 0f, movement.groundLayer))
             return false;
 
-        int count = Physics2D.OverlapBox(centre, boxSize, 0f, solidBodies, bodyOverlaps);
+        // Other enemies (and the player, with avoidPlayer) get the full body
+        // plus a little clearance.
+        int count = Physics2D.OverlapBox(centre, bodySize + Vector2.one * EnemyClearance, 0f, solidBodies, bodyOverlaps);
 
         for (int i = 0; i < count; i++)
         {

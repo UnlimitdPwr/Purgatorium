@@ -52,7 +52,7 @@ public class EnemyPatrol : MonoBehaviour
 
         bool pastEnd = offset * patrolDirection >= patrolDistance;
         bool blocked = movement != null &&
-                       (!movement.CanMove(patrolDirection) || movement.GetAllyAhead(patrolDirection) != null);
+                       (!movement.CanMove(patrolDirection) || movement.GetAllyAhead(patrolDirection, movement.allySpacing) != null);
 
         // Reached the end of the patrol, or a ledge/wall — wait, then turn.
         if (pastEnd || blocked)

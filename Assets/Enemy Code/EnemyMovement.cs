@@ -22,9 +22,13 @@ public class EnemyMovement : MonoBehaviour
     [Tooltip("How far down to look for ground in front before calling it a ledge.")]
     public float ledgeCheckDepth = 1f;
 
-    [Tooltip("How far past the front of the body to look for another enemy in the way. " +
-             "The enemy jumps over it or waits, instead of shoving it along.")]
-    public float allyLookAhead = 0.3f;
+    [Tooltip("Gap kept from another enemy in front. A chasing enemy stops this far behind an ally " +
+             "that's between it and the player, then jumps over it or waits; patrols turn around here. " +
+             "Enemies never walk closer than AllyContactGap whatever this is set to.")]
+    public float allySpacing = 1f;
+
+    // Closest an enemy ever walks up to another one.
+    public const float AllyContactGap = 0.3f;
 
     // =========================
     // HAZARDS
@@ -78,6 +82,11 @@ public class EnemyMovement : MonoBehaviour
             launched = false;
             return;
         }
+
+        // Standing on another enemy's head (it walked under a jump, or this
+        // one dropped onto it): hop off to the side instead of riding it.
+        if (TryHopOffEnemy())
+            return;
 
         // Mid-jump: let the launch velocity carry the enemy until it lands.
         if (launched)
@@ -293,9 +302,9 @@ public class EnemyMovement : MonoBehaviour
     // Solid bodies only — level geometry is left out (see Awake).
     private ContactFilter2D solidBodies;
 
-    // The body of another enemy right in front, or null. Walking on would
-    // push it (and maybe shove it into the player).
-    public Collider2D GetAllyAhead(float direction)
+    // The body of another enemy within `gap` in front of this one (default
+    // AllyContactGap — walking on would push it), or null.
+    public Collider2D GetAllyAhead(float direction, float gap = AllyContactGap)
     {
         if (direction == 0f || body == null)
             return null;
@@ -305,7 +314,7 @@ public class EnemyMovement : MonoBehaviour
 
         Vector2 size = new Vector2(0.05f, bounds.size.y * 0.8f);
         int count = Physics2D.BoxCast(bounds.center, size, 0f, new Vector2(sign, 0f), solidBodies,
-                                      allyHits, bounds.extents.x + allyLookAhead);
+                                      allyHits, bounds.extents.x + gap);
 
         for (int i = 0; i < count; i++)
         {
@@ -314,6 +323,65 @@ public class EnemyMovement : MonoBehaviour
 
             if (otherBody != null && otherBody != rb && otherBody.GetComponent<EnemyController>() != null)
                 return other;
+        }
+
+        return null;
+    }
+
+    // Speed of the little hop off another enemy's head.
+    private const float HopOffSpeed = 3f;
+
+    // Must be resting on the other enemy this long before hopping off — the
+    // top of a jump over one is "not moving up or down" for a moment too.
+    private const float RestBeforeHopOff = 0.15f;
+
+    private float restingOnEnemyTime;
+
+    bool TryHopOffEnemy()
+    {
+        Collider2D under = null;
+
+        // "Resting" includes slowly sliding off a rounded head or shoulder.
+        bool resting = body != null && Mathf.Abs(rb.linearVelocity.y) <= 0.5f && !IsGrounded() &&
+                       (under = GetEnemyBelow()) != null;
+
+        if (!resting)
+        {
+            restingOnEnemyTime = 0f;
+            return false;
+        }
+
+        restingOnEnemyTime += Time.fixedDeltaTime;
+
+        if (restingOnEnemyTime < RestBeforeHopOff)
+            return false;
+
+        restingOnEnemyTime = 0f;
+
+        float away = Mathf.Sign(body.bounds.center.x - under.bounds.center.x);
+
+        if (away == 0f)
+            away = facingDirection;
+
+        Launch(new Vector2(away * moveSpeed, HopOffSpeed));
+        return true;
+    }
+
+    // Another enemy's body right under the feet, or null.
+    Collider2D GetEnemyBelow()
+    {
+        Bounds bounds = body.bounds;
+        Vector2 origin = new Vector2(bounds.center.x, bounds.min.y + 0.05f);
+        Vector2 size = new Vector2(bounds.size.x * 0.9f, 0.05f);
+
+        int count = Physics2D.BoxCast(origin, size, 0f, Vector2.down, solidBodies, allyHits, 0.1f);
+
+        for (int i = 0; i < count; i++)
+        {
+            Rigidbody2D otherBody = allyHits[i].collider.attachedRigidbody;
+
+            if (otherBody != null && otherBody != rb && otherBody.GetComponent<EnemyController>() != null)
+                return allyHits[i].collider;
         }
 
         return null;

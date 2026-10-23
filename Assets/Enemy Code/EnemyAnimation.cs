@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class EnemyAnimation : MonoBehaviour
@@ -14,6 +15,17 @@ public class EnemyAnimation : MonoBehaviour
     private const string RetreatTrigger = "Retreat";
     private const string JumpAttackWindUpTrigger = "JumpAttackWindUp";
     private const string JumpAttackTrigger = "JumpAttack";
+    private const string NoticedTrigger = "Noticed";
+
+    [Header("Noticed")]
+    [Tooltip("Show a \"!\" over the enemy's head while it's in its noticed pause " +
+             "(just spotted the player). Works with or without a noticed animation.")]
+    public bool showNoticedMark = true;
+
+    public Color noticedMarkColor = new Color(1f, 0.85f, 0.2f);
+
+    [Tooltip("Height of the \"!\" text.")]
+    public float noticedMarkSize = 6f;
 
     [Header("Jump Attack Wind-up")]
     [Tooltip("Pulse the sprite this colour while winding up a leap attack, so the player " +
@@ -30,6 +42,9 @@ public class EnemyAnimation : MonoBehaviour
     private Animator animator;
     private EnemyMovement movement;
     private SpriteRenderer spriteRenderer;
+    private EnemyController controller;
+
+    private TextMeshPro noticedMark;
 
     private Color baseColor = Color.white;
     private float flashTimer;
@@ -42,6 +57,7 @@ public class EnemyAnimation : MonoBehaviour
         animator = GetComponent<Animator>();
         movement = GetComponent<EnemyMovement>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        controller = GetComponent<EnemyController>();
 
         if (spriteRenderer != null)
             baseColor = spriteRenderer.color;
@@ -59,6 +75,26 @@ public class EnemyAnimation : MonoBehaviour
         UpdateAirborneAnimation();
         UpdateFacingDirection();
         UpdateWindUpFlash();
+        UpdateNoticedMark();
+    }
+
+    void OnEnable()
+    {
+        if (controller != null)
+            controller.OnStateChanged += HandleStateChanged;
+    }
+
+    void OnDisable()
+    {
+        if (controller != null)
+            controller.OnStateChanged -= HandleStateChanged;
+    }
+
+    void HandleStateChanged(EnemyState previous, EnemyState next)
+    {
+        // Just spotted the player — fires "Noticed" once that exists.
+        if (next == EnemyState.Noticed)
+            SetOptionalTrigger(NoticedTrigger);
     }
 
     void UpdateMovementAnimation()
@@ -145,6 +181,63 @@ public class EnemyAnimation : MonoBehaviour
     // =========================
     // INTERNAL
     // =========================
+
+    // The "!" follows the enemy's head while it's in its noticed pause.
+    void UpdateNoticedMark()
+    {
+        bool show = showNoticedMark && controller != null && controller.State == EnemyState.Noticed;
+
+        if (show && noticedMark == null)
+            noticedMark = CreateNoticedMark();
+
+        if (noticedMark == null)
+            return;
+
+        noticedMark.gameObject.SetActive(show);
+
+        if (!show)
+            return;
+
+        Collider2D body = movement != null ? movement.GetBody() : null;
+        Vector3 top = body != null
+            ? new Vector3(body.bounds.center.x, body.bounds.max.y + 0.4f, 0f)
+            : transform.position + Vector3.up;
+
+        noticedMark.transform.position = top;
+    }
+
+    TextMeshPro CreateNoticedMark()
+    {
+        TMP_FontAsset font = TMP_Settings.defaultFontAsset;
+
+        // No TextMesh Pro font in the project — just skip the mark.
+        if (font == null)
+        {
+            showNoticedMark = false;
+            return null;
+        }
+
+        GameObject go = new GameObject("NoticedMark");
+        go.transform.SetParent(transform, false);
+
+        // Undo the enemy's scale so the mark is the same size on any enemy.
+        Vector3 scale = transform.lossyScale;
+        go.transform.localScale = new Vector3(
+            1f / Mathf.Max(0.0001f, Mathf.Abs(scale.x)),
+            1f / Mathf.Max(0.0001f, Mathf.Abs(scale.y)),
+            1f);
+
+        TextMeshPro mark = go.AddComponent<TextMeshPro>();
+        mark.font = font;
+        mark.text = "!";
+        mark.fontSize = noticedMarkSize;
+        mark.fontStyle = FontStyles.Bold;
+        mark.color = noticedMarkColor;
+        mark.alignment = TextAlignmentOptions.Center;
+        mark.sortingOrder = spriteRenderer != null ? spriteRenderer.sortingOrder + 10 : 100;
+
+        return mark;
+    }
 
     void UpdateWindUpFlash()
     {

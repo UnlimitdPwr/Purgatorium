@@ -31,6 +31,8 @@ public static class LevelSystemsSetup
         changed |= AddToEnemies<EnemyLoot>();
         changed |= AddToEnemies<EnemyRespawn>();
         changed |= AddToEnemies<EnemyStatusOnHit>();
+        changed |= AddToEnemies<EnemySearch>();
+        changed |= AddToEnemies<EnemyGroupAlert>();
         changed |= AddPlayerStatsToPlayers();
 
         if (!changed)

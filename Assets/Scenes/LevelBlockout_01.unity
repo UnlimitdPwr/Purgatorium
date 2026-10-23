@@ -765,6 +765,9 @@ GameObject:
   - component: {fileID: 78381826}
   - component: {fileID: 78381825}
   - component: {fileID: 78381824}
+  - component: {fileID: 78381849}
+  - component: {fileID: 78381848}
+  - component: {fileID: 78381847}
   m_Layer: 0
   m_Name: Enemy (1)
   m_TagString: Untagged
@@ -907,6 +910,7 @@ MonoBehaviour:
   jumpHeight: 1.7
   maxJumpDistance: 4
   maxAirSpeedMultiplier: 1.5
+  jumpOverAirSpeedMultiplier: 2.5
   ledgeClearance: 0.2
   landingInset: 0.5
   maxDropHeight: 4
@@ -1063,6 +1067,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86a572ac88ec6df45b6c6426b58747fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  showNoticedMark: 1
+  noticedMarkColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  noticedMarkSize: 6
   flashDuringWindUp: 1
   windUpTint: {r: 1, g: 0.45, b: 0.45, a: 1}
   windUpFlashRate: 8
@@ -1086,6 +1093,7 @@ MonoBehaviour:
     m_Bits: 256
   edgeLookAhead: 0.15
   ledgeCheckDepth: 2
+  allySpacing: 1
   avoidHazards: 1
 --- !u!114 &78381842
 MonoBehaviour:
@@ -1102,6 +1110,7 @@ MonoBehaviour:
   reachMargin: 0.25
   fallbackAttackRange: 1.1
   leashDistance: 15
+  noticePause: 0.5
   levelDifference: 0.5
   logStateChanges: 0
 --- !u!70 &78381843
@@ -1246,6 +1255,52 @@ Transform:
   - {fileID: 1027373880}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &78381847
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 78381823}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7ac04aeef3ec438c86ae412144cb5ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyGroupAlert
+  alertRadius: 7
+  maxHeightDifference: 2
+  requireLineOfSight: 1
+  responseDelay: {x: 0.1, y: 0.4}
+--- !u!114 &78381848
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 78381823}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd5c9ad18811b4fd9b3612ae6facfd98, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySearch
+  searchDuration: 4
+  lookInterval: 1
+  searchSpeedMultiplier: 0.7
+  arriveDistance: 0.4
+  maxTravelTime: 6
+--- !u!114 &78381849
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 78381823}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a19e967081a66466882af208e88d67ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyStatusOnHit
+  inflictions: []
 --- !u!1 &99948644
 GameObject:
   m_ObjectHideFlags: 0
@@ -7808,6 +7863,7 @@ MonoBehaviour:
   mainPanel: {fileID: 57846855}
   statsPanel: {fileID: 1112651861}
   bonfireStatsUI: {fileID: 1112651863}
+  equipmentPanel: {fileID: 0}
   bonfireCanvasGroup: {fileID: 747019942}
   playerHUDCanvasGroup: {fileID: 1774931491}
   transitionDuration: 0.6
@@ -13288,6 +13344,9 @@ GameObject:
   - component: {fileID: 1136563205}
   - component: {fileID: 1136563204}
   - component: {fileID: 1136563203}
+  - component: {fileID: 1136563228}
+  - component: {fileID: 1136563227}
+  - component: {fileID: 1136563226}
   m_Layer: 0
   m_Name: Enemy (2)
   m_TagString: Untagged
@@ -13430,6 +13489,7 @@ MonoBehaviour:
   jumpHeight: 1.7
   maxJumpDistance: 4
   maxAirSpeedMultiplier: 1.5
+  jumpOverAirSpeedMultiplier: 2.5
   ledgeClearance: 0.2
   landingInset: 0.5
   maxDropHeight: 4
@@ -13586,6 +13646,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86a572ac88ec6df45b6c6426b58747fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  showNoticedMark: 1
+  noticedMarkColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  noticedMarkSize: 6
   flashDuringWindUp: 1
   windUpTint: {r: 1, g: 0.45, b: 0.45, a: 1}
   windUpFlashRate: 8
@@ -13609,6 +13672,7 @@ MonoBehaviour:
     m_Bits: 256
   edgeLookAhead: 0.15
   ledgeCheckDepth: 2
+  allySpacing: 1
   avoidHazards: 1
 --- !u!114 &1136563221
 MonoBehaviour:
@@ -13625,6 +13689,7 @@ MonoBehaviour:
   reachMargin: 0.25
   fallbackAttackRange: 1.1
   leashDistance: 15
+  noticePause: 0.5
   levelDifference: 0.5
   logStateChanges: 0
 --- !u!70 &1136563222
@@ -13769,6 +13834,52 @@ Transform:
   - {fileID: 899418369}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1136563226
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1136563202}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7ac04aeef3ec438c86ae412144cb5ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyGroupAlert
+  alertRadius: 7
+  maxHeightDifference: 2
+  requireLineOfSight: 1
+  responseDelay: {x: 0.1, y: 0.4}
+--- !u!114 &1136563227
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1136563202}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd5c9ad18811b4fd9b3612ae6facfd98, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySearch
+  searchDuration: 4
+  lookInterval: 1
+  searchSpeedMultiplier: 0.7
+  arriveDistance: 0.4
+  maxTravelTime: 6
+--- !u!114 &1136563228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1136563202}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a19e967081a66466882af208e88d67ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyStatusOnHit
+  inflictions: []
 --- !u!1 &1142068921
 GameObject:
   m_ObjectHideFlags: 0
@@ -21541,6 +21652,9 @@ GameObject:
   - component: {fileID: 1778876725}
   - component: {fileID: 1778876731}
   - component: {fileID: 1778876732}
+  - component: {fileID: 1778876735}
+  - component: {fileID: 1778876734}
+  - component: {fileID: 1778876733}
   m_Layer: 0
   m_Name: Enemy 1
   m_TagString: Untagged
@@ -21698,6 +21812,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86a572ac88ec6df45b6c6426b58747fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  showNoticedMark: 1
+  noticedMarkColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  noticedMarkSize: 6
   flashDuringWindUp: 1
   windUpTint: {r: 1, g: 0.45, b: 0.45, a: 1}
   windUpFlashRate: 8
@@ -21721,6 +21838,7 @@ MonoBehaviour:
     m_Bits: 256
   edgeLookAhead: 0.15
   ledgeCheckDepth: 2
+  allySpacing: 1
   avoidHazards: 1
 --- !u!114 &1778876720
 MonoBehaviour:
@@ -21737,6 +21855,7 @@ MonoBehaviour:
   reachMargin: 0.25
   fallbackAttackRange: 1.1
   leashDistance: 15
+  noticePause: 0.5
   levelDifference: 0.5
   logStateChanges: 0
 --- !u!70 &1778876721
@@ -21982,6 +22101,7 @@ MonoBehaviour:
   jumpHeight: 1.7
   maxJumpDistance: 4
   maxAirSpeedMultiplier: 1.5
+  jumpOverAirSpeedMultiplier: 2.5
   ledgeClearance: 0.2
   landingInset: 0.5
   maxDropHeight: 4
@@ -22022,6 +22142,52 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 70b3910a084284208a877ecc81910603, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HazardReceiver
+--- !u!114 &1778876733
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778876709}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7ac04aeef3ec438c86ae412144cb5ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyGroupAlert
+  alertRadius: 7
+  maxHeightDifference: 2
+  requireLineOfSight: 1
+  responseDelay: {x: 0.1, y: 0.4}
+--- !u!114 &1778876734
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778876709}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd5c9ad18811b4fd9b3612ae6facfd98, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySearch
+  searchDuration: 4
+  lookInterval: 1
+  searchSpeedMultiplier: 0.7
+  arriveDistance: 0.4
+  maxTravelTime: 6
+--- !u!114 &1778876735
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778876709}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a19e967081a66466882af208e88d67ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyStatusOnHit
+  inflictions: []
 --- !u!1 &1781525075
 GameObject:
   m_ObjectHideFlags: 0
@@ -24154,6 +24320,7 @@ MonoBehaviour:
   throwForce: 3
   inventory: {fileID: 2003877432}
   bonfireSeedItem: {fileID: 11400000, guid: d96924f58bc4d6647b6685946a825ae7, type: 2}
+  equipmentManager: {fileID: 0}
 --- !u!114 &2003877432
 MonoBehaviour:
   m_ObjectHideFlags: 0

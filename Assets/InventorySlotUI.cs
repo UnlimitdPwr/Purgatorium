@@ -1,8 +1,11 @@
+
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
-public class InventorySlotUI : MonoBehaviour
+public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
 {
     [Header("UI References")]
     [SerializeField] private Image itemIcon;
@@ -10,65 +13,55 @@ public class InventorySlotUI : MonoBehaviour
     [SerializeField] private Image selectionHighlight;
 
     private int slotIndex;
+    private Action<int> selectionCallback;
 
-    // This function sets up the UI slot with its corresponding inventory slot.
+    // This function connects the UI slot to its inventory index.
     public void Setup(InventorySlot slot, int index)
     {
         slotIndex = index;
-
         UpdateSlot(slot);
     }
 
-    // This function updates the visual appearance of the slot.
+    // This function connects mouse clicks to the InventoryUI selection system.
+    public void SetSelectionCallback(Action<int> callback)
+    {
+        selectionCallback = callback;
+    }
+
+    // This function selects the slot when the player clicks it with the mouse.
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (eventData.button == PointerEventData.InputButton.Left)
+            selectionCallback?.Invoke(slotIndex);
+    }
+
+    // This function updates the displayed item icon and stack amount.
     public void UpdateSlot(InventorySlot slot)
     {
-        // This checks whether the required UI references have been assigned.
-        if (itemIcon == null)
+        if (itemIcon == null || amountText == null)
         {
-            Debug.LogError(
-                "InventorySlotUI is missing its Item Icon reference.",
-                this
-            );
-
+            Debug.LogError("InventorySlotUI is missing its icon or amount reference.", this);
             return;
         }
 
-        if (amountText == null)
-        {
-            Debug.LogError(
-                "InventorySlotUI is missing its Amount Text reference.",
-                this
-            );
-
-            return;
-        }
-
-        // This hides the item visuals when the inventory slot is empty.
         if (slot == null || slot.IsEmpty())
         {
             itemIcon.enabled = false;
             amountText.enabled = false;
-
             return;
         }
 
-        // This displays the item icon and stack amount.
         itemIcon.enabled = true;
         amountText.enabled = true;
-
-        // This displays the inventory-specific sprite for the item.
         itemIcon.sprite = slot.item.inventoryIcon;
-
-        // This displays the number of items in the stack.
         amountText.text = slot.amount.ToString();
     }
 
-    // This function controls whether this slot is visually selected.
+    // This function shows or hides the highlight for the selected slot.
     public void SetSelected(bool selected)
     {
         if (selectionHighlight != null)
-        {
             selectionHighlight.enabled = selected;
-        }
     }
 }
+

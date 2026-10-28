@@ -1,3 +1,4 @@
+
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,6 +18,7 @@ public class EquipmentUI : MonoBehaviour
 
     [Header("Equipment Overview")]
     [SerializeField] private GameObject equipmentContainer;
+    [SerializeField] private GameObject equipmentBackButton;
 
     [Header("Inventory Display")]
     [SerializeField] private Transform inventoryContent;
@@ -35,11 +37,9 @@ public class EquipmentUI : MonoBehaviour
     private int selectedSlotIndex = -1;
     private ItemData selectedItem;
 
-    [SerializeField] private GameObject equipmentBackButton;
-
     private void OnEnable()
     {
-        // This function opens the equipment overview and hides inventory selection.
+        // This function opens the equipment overview and subscribes to inventory and equipment changes.
         if (equipmentContainer != null)
             equipmentContainer.SetActive(true);
 
@@ -75,7 +75,7 @@ public class EquipmentUI : MonoBehaviour
 
     public void RefreshUI()
     {
-        // This function rebuilds all equipment rows and refreshes compatible inventory items.
+        // This function rebuilds equipment rows and refreshes the inventory selection display.
         if (equipmentManager == null || inventory == null)
             return;
 
@@ -110,8 +110,8 @@ public class EquipmentUI : MonoBehaviour
         EquipmentSlotType slotType,
         string rowLabel)
     {
-        // This function creates one button for each equipment slot in the specified row.
-        if (row == null)
+        // This function creates one selectable button for each equipment slot.
+        if (row == null || itemButtonPrefab == null)
             return;
 
         ClearChildren(row);
@@ -127,13 +127,9 @@ public class EquipmentUI : MonoBehaviour
             string label = rowLabel + " " + (i + 1);
 
             if (equippedItem != null)
-            {
                 label += "\n" + equippedItem.itemName;
-            }
             else
-            {
                 label += "\nEmpty";
-            }
 
             slotButton.Setup(
                 equippedItem != null ? equippedItem.inventoryIcon : null,
@@ -143,11 +139,11 @@ public class EquipmentUI : MonoBehaviour
         }
     }
 
-    // This function switches from the equipment overview to inventory selection.
     private void SelectEquipmentSlot(
         EquipmentSlotType slotType,
         int slotIndex)
     {
+        // This function selects an equipment slot and opens inventory selection for that slot.
         selectedSlotType = slotType;
         selectedSlotIndex = slotIndex;
         selectedItem = null;
@@ -168,7 +164,7 @@ public class EquipmentUI : MonoBehaviour
 
     private void RefreshInventoryItems()
     {
-        // This function lists owned items compatible with the currently selected equipment slot.
+        // This function lists owned, compatible items that are not equipped in another slot.
         if (inventoryContent == null)
             return;
 
@@ -195,10 +191,21 @@ public class EquipmentUI : MonoBehaviour
 
             ItemData item = inventorySlot.item;
 
+            // This function filters out items incompatible with the selected equipment slot.
             if (!IsCompatible(item.equipmentType, selectedSlotType))
                 continue;
 
-            // Display each item definition once, even when multiple copies are owned.
+            // This function hides items already equipped in another equipment slot.
+            if (equipmentManager != null &&
+                equipmentManager.IsEquippedInAnotherSlot(
+                    item,
+                    selectedSlotType,
+                    selectedSlotIndex))
+            {
+                continue;
+            }
+
+            // This function prevents duplicate buttons for the same item definition.
             if (!displayedItems.Add(item))
                 continue;
 
@@ -215,31 +222,15 @@ public class EquipmentUI : MonoBehaviour
             );
         }
 
-        // This section fills the inventory grid to 24 visible positions.
-        const int visibleInventorySlots = 24;
-
-        // This sets the minimum number of visible inventory grid positions to 24.
+        // This function fills the inventory grid with placeholders up to 24 positions.
         const int totalInventorySlots = 24;
 
-        // This calculates how many empty placeholders are needed to fill the grid.
-        int emptySlotsNeeded = Mathf.Max(0, totalInventorySlots - displayedItems.Count);
+        int emptySlotsNeeded =
+            Mathf.Max(0, totalInventorySlots - displayedItems.Count);
 
         for (int i = 0; i < emptySlotsNeeded; i++)
         {
-            // This creates one disabled placeholder for an unused grid position.
-            EquipmentUIItemButton emptyButton =
-                Instantiate(itemButtonPrefab, inventoryContent);
-
-            emptyButton.Setup(
-                null,
-                "Empty",
-                null,
-                false
-            );
-        }
-
-        while (inventoryContent.childCount < totalInventorySlots)
-        {
+            // This function creates one disabled button for an unused inventory position.
             EquipmentUIItemButton emptyButton =
                 Instantiate(itemButtonPrefab, inventoryContent);
 
@@ -256,7 +247,7 @@ public class EquipmentUI : MonoBehaviour
 
     private void SelectInventoryItem(ItemData item)
     {
-        // This function selects an inventory item to equip or discard.
+        // This function selects an inventory item for equipping or discarding.
         selectedItem = item;
 
         RefreshActionButtons();
@@ -265,7 +256,7 @@ public class EquipmentUI : MonoBehaviour
 
     public void EquipSelectedItem()
     {
-        // This function equips the selected inventory item into the selected equipment slot.
+        // This function equips the selected item if the equipment manager accepts the operation.
         if (equipmentManager == null ||
             selectedItem == null ||
             selectedSlotIndex < 0)
@@ -285,7 +276,7 @@ public class EquipmentUI : MonoBehaviour
 
     public void UnequipSelectedSlot()
     {
-        // This function unequips the item from the currently selected equipment slot.
+        // This function removes the item from the selected equipment slot without discarding it.
         if (equipmentManager == null || selectedSlotIndex < 0)
             return;
 
@@ -300,7 +291,7 @@ public class EquipmentUI : MonoBehaviour
 
     public void DiscardSelectedItem()
     {
-        // This function discards one unit of the selected inventory item.
+        // This function discards one unit of the selected item from the inventory.
         if (equipmentManager == null || selectedItem == null)
             return;
 
@@ -315,7 +306,7 @@ public class EquipmentUI : MonoBehaviour
         EquipmentSlotType itemType,
         EquipmentSlotType slotType)
     {
-        // This function permits throwables and usables in the shared quick-item row.
+        // This function allows throwable and usable items to share quick-item slots.
         if (slotType == EquipmentSlotType.Throwable ||
             slotType == EquipmentSlotType.Usable)
         {
@@ -328,7 +319,7 @@ public class EquipmentUI : MonoBehaviour
 
     private void RefreshActionButtons()
     {
-        // This function enables actions only when their required selections are available.
+        // This function enables buttons according to the current slot and item selections.
         bool hasSlot = selectedSlotIndex >= 0;
         bool hasItem = selectedItem != null;
 
@@ -338,7 +329,12 @@ public class EquipmentUI : MonoBehaviour
                 hasSlot &&
                 hasItem &&
                 inventory != null &&
-                inventory.HasItem(selectedItem);
+                inventory.HasItem(selectedItem) &&
+                (equipmentManager == null ||
+                 !equipmentManager.IsEquippedInAnotherSlot(
+                     selectedItem,
+                     selectedSlotType,
+                     selectedSlotIndex));
         }
 
         if (unequipButton != null)
@@ -359,7 +355,7 @@ public class EquipmentUI : MonoBehaviour
 
     private ItemData GetSelectedEquippedItem()
     {
-        // This function returns the item currently occupying the selected slot.
+        // This function returns the item currently occupying the selected equipment slot.
         if (equipmentManager == null || selectedSlotIndex < 0)
             return null;
 
@@ -387,7 +383,7 @@ public class EquipmentUI : MonoBehaviour
 
     private void UpdateSelectedItemText()
     {
-        // This function displays which inventory item or equipment slot is currently selected.
+        // This function displays the selected item's name and description or the selected slot status.
         if (selectedItemText == null)
             return;
 
@@ -413,19 +409,17 @@ public class EquipmentUI : MonoBehaviour
 
     private void ClearChildren(Transform parent)
     {
-        // This function destroys generated UI buttons before rebuilding a row or inventory list.
+        // This function destroys generated UI objects before their parent list is rebuilt.
         if (parent == null)
             return;
 
         for (int i = parent.childCount - 1; i >= 0; i--)
-        {
             Destroy(parent.GetChild(i).gameObject);
-        }
     }
 
-    // This function returns to the equipment overview and restores its BackButton.
     public void CloseInventorySelection()
     {
+        // This function closes inventory selection and returns to the equipment overview.
         if (inventorySelectionPanel != null)
             inventorySelectionPanel.SetActive(false);
 
@@ -442,5 +436,6 @@ public class EquipmentUI : MonoBehaviour
         UpdateSelectedItemText();
     }
 }
+
 
 

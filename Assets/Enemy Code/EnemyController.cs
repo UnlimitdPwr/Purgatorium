@@ -11,7 +11,9 @@ public enum EnemyState
     Dead,     // health ran out — does nothing
     Jump,     // in the air on a jump (onto a platform, over a gap, down a ledge)
     Retreat,  // hopping back after a combo, then a short pause
-    JumpAttack // winding up, leaping at the player, landing (EnemyJumpAttack runs it)
+    JumpAttack, // winding up, leaping at the player, landing (EnemyJumpAttack runs it)
+    Search,   // lost the player — going to where it was last seen, then looking around
+    Noticed   // just spotted the player (or an ally raised the alarm) — a short pause before charging
 }
 
 // Umbrella script for the enemy: runs the state machine and tells the other
@@ -30,6 +32,11 @@ public class EnemyController : MonoBehaviour
     [Header("Chase")]
     [Tooltip("How far from home the enemy will chase before giving up and returning.")]
     public float leashDistance = 10f;
+
+    [Header("Noticing")]
+    [Tooltip("Seconds the enemy stops and stares after first spotting the player, before it charges. " +
+             "Skipped when it spots them again while already searching. 0 = charge straight away.")]
+    public float noticePause = 0.5f;
 
     [Header("Platforms")]
     [Tooltip("The player counts as 'above' or 'below' the enemy when the ground under them " +
@@ -51,6 +58,10 @@ public class EnemyController : MonoBehaviour
     private EnemyJumpAttack jumpAttack;
     private EnemyAttackToken token;
     private EnemyStatusEffects status;
+    private EnemySearch search;
+    private EnemyGroupAlert groupAlert;
+
+    private float noticeTimer;
 
     private EnemyState state = EnemyState.Patrol;
 
@@ -63,6 +74,11 @@ public class EnemyController : MonoBehaviour
     private float approachX;
     private Vector2 approachLanding;
     private float nextJumpSearchTime;
+    private float nextAllyJumpSearchTime;
+
+    // Set while backing up for a run-up to jump over this other enemy.
+    private Collider2D blockingAlly;
+    private float allyRunUpX;
 
     // True when the last search found no jump and no spot to jump from.
     private bool noWayFound;
@@ -86,6 +102,8 @@ public class EnemyController : MonoBehaviour
         jumpAttack = GetComponent<EnemyJumpAttack>();
         token = GetComponent<EnemyAttackToken>();
         status = GetComponent<EnemyStatusEffects>();
+        search = GetComponent<EnemySearch>();
+        groupAlert = GetComponent<EnemyGroupAlert>();
     }
 
     void Update()
@@ -122,6 +140,8 @@ public class EnemyController : MonoBehaviour
             case EnemyState.Jump:    UpdateJump();    break;
             case EnemyState.Retreat: UpdateRetreat(); break;
             case EnemyState.JumpAttack: UpdateJumpAttack(); break;
+            case EnemyState.Search:  UpdateSearch();  break;
+            case EnemyState.Noticed: UpdateNoticed(); break;
         }
     }
 
@@ -153,7 +173,7 @@ public class EnemyController : MonoBehaviour
     {
         if (!RefreshTarget())
         {
-            ChangeState(EnemyState.Return);
+            LoseTarget();
             return;
         }
 
@@ -176,7 +196,9 @@ public class EnemyController : MonoBehaviour
             return;
         }
 
-        if (TryStartJumpAttack())
+        // A random leap never goes over an ally that's in the way — that's
+        // HandleBlockingAlly's call (it waits for the ally to stop first).
+        if (!IsAllyBetweenMeAndTarget() && TryStartJumpAttack())
             return;
 
         if (IsWaitingForTurn())
@@ -186,6 +208,9 @@ public class EnemyController : MonoBehaviour
         }
 
         float direction = targeting.GetHorizontalDirectionToTarget();
+
+        if (HandleBlockingAlly(direction, true))
+            return;
 
         if (Navigate(direction, GetTargetGround(), true))
             return;
@@ -333,7 +358,7 @@ public class EnemyController : MonoBehaviour
 
         if (!RefreshTarget())
         {
-            ChangeState(EnemyState.Return);
+            LoseTarget();
             return;
         }
 
@@ -369,7 +394,8 @@ public class EnemyController : MonoBehaviour
 
     // From a distance, sometimes leap at the player (EnemyJumpAttack decides
     // how often and whether the leap can be made).
-    bool TryStartJumpAttack()
+    // `skipChance`: leap whenever possible (another enemy is in the way).
+    bool TryStartJumpAttack(bool skipChance = false)
     {
         if (jumpAttack == null || jump == null || movement.IsLaunched || !movement.IsGrounded())
             return false;
@@ -386,7 +412,7 @@ public class EnemyController : MonoBehaviour
         if (token != null && !token.CanAcquire)
             return false;
 
-        if (!jumpAttack.TryChooseLeap(targetGround))
+        if (!jumpAttack.TryChooseLeap(targetGround, skipChance))
             return false;
 
         TryTakeAttackTurn();
@@ -401,7 +427,10 @@ public class EnemyController : MonoBehaviour
         if (jumpAttack != null && jumpAttack.IsBusy)
             return;
 
-        ChangeState(RefreshTarget() ? EnemyState.Chase : EnemyState.Return);
+        if (RefreshTarget())
+            ChangeState(EnemyState.Chase);
+        else
+            LoseTarget();
     }
 
     // =========================
@@ -445,7 +474,10 @@ public class EnemyController : MonoBehaviour
         if (retreat != null && retreat.IsRetreating)
             return;
 
-        ChangeState(RefreshTarget() ? EnemyState.Chase : EnemyState.Return);
+        if (RefreshTarget())
+            ChangeState(EnemyState.Chase);
+        else
+            LoseTarget();
     }
 
     // =========================
@@ -464,6 +496,9 @@ public class EnemyController : MonoBehaviour
         }
 
         float direction = patrol.GetDirectionHome();
+
+        if (HandleBlockingAlly(direction, false))
+            return;
 
         // Hop down off the platform, or over the gap/wall, on the way home.
         Vector2 home = new Vector2(patrol.HomeX, movement.GetFeetPosition().y);
@@ -496,7 +531,7 @@ public class EnemyController : MonoBehaviour
 
     void StartJump(Vector2 velocity)
     {
-        stateAfterJump = state == EnemyState.Return ? EnemyState.Return : EnemyState.Chase;
+        stateAfterJump = state == EnemyState.Return || state == EnemyState.Search ? state : EnemyState.Chase;
         hasApproachPoint = false;
 
         jump.Jump(velocity);
@@ -512,7 +547,7 @@ public class EnemyController : MonoBehaviour
 
         if (stateAfterJump == EnemyState.Chase && !RefreshTarget())
         {
-            ChangeState(EnemyState.Return);
+            LoseTarget();
             return;
         }
 
@@ -534,15 +569,19 @@ public class EnemyController : MonoBehaviour
             return;
 
         // Stun over — go straight back after the player if it's still around.
-        ChangeState(RefreshTarget() ? EnemyState.Chase : EnemyState.Return);
+        if (RefreshTarget())
+            ChangeState(EnemyState.Chase);
+        else
+            LoseTarget();
     }
 
     // =========================
     // HELPERS
     // =========================
 
-    // Starts a chase if the player can be sensed and is within the leash.
-    bool TryNoticePlayer()
+    // Starts a chase if the player can be sensed and is within the leash —
+    // after the "noticed" pause, unless `pause` is false (already searching).
+    bool TryNoticePlayer(bool pause = true)
     {
         if (!detection.CanSensePlayer())
             return false;
@@ -555,7 +594,16 @@ public class EnemyController : MonoBehaviour
             return false;
 
         targeting.SetTarget(player);
-        ChangeState(EnemyState.Chase);
+        RememberSighting();
+
+        if (groupAlert != null)
+            groupAlert.RaiseAlarm(player);
+
+        if (pause && noticePause > 0f)
+            StartNoticed(noticePause);
+        else
+            ChangeState(EnemyState.Chase);
+
         return true;
     }
 
@@ -571,6 +619,7 @@ public class EnemyController : MonoBehaviour
         }
 
         targeting.SetTarget(player);
+        RememberSighting();
         return true;
     }
 
@@ -625,6 +674,14 @@ public class EnemyController : MonoBehaviour
             return;
         }
 
+        // Never shove another enemy along.
+        if (movement.GetAllyAhead(direction) != null)
+        {
+            movement.Stop();
+            movement.Face(direction);
+            return;
+        }
+
         if (!movement.CanMove(direction))
         {
             movement.Stop();
@@ -635,10 +692,281 @@ public class EnemyController : MonoBehaviour
         movement.Move(direction);
     }
 
+    // =========================
+    // OTHER ENEMIES IN THE WAY
+    // =========================
+
+    // Another enemy is right in front. Instead of shoving it (into the
+    // player), leap at the player over it, or jump over it — landing behind
+    // the player when there's room — backing up a step first for a run-up
+    // if it's too close to clear. If none of that works, wait.
+    // `chasing`: false when just walking home (no leap, nothing to get behind).
+    bool HandleBlockingAlly(float direction, bool chasing)
+    {
+        // Keep allySpacing back from an ally that's in the way — but an ally
+        // on the far side of the player isn't in the way.
+        Collider2D ally = movement.GetAllyAhead(direction, movement.allySpacing);
+
+        if (ally != null && chasing && targeting.TryGetTargetBounds(out Bounds playerBounds))
+        {
+            float sign = Mathf.Sign(direction);
+            float allyNear = sign > 0f ? ally.bounds.min.x : ally.bounds.max.x;
+            float playerNear = sign > 0f ? playerBounds.min.x : playerBounds.max.x;
+
+            if ((allyNear - playerNear) * sign > 0f)
+                ally = null;
+        }
+
+        // Only jump over an ally that has settled (attacking, waiting). One
+        // that's walking the same way isn't in the way — just follow it at
+        // the spacing gap; one that's hopping or walking about could end up
+        // under the landing spot. Either way, hold back until it settles.
+        if (ally != null && blockingAlly == null && IsAllyMoving(ally))
+        {
+            movement.Stop();
+            movement.Face(direction);
+            return true;
+        }
+
+        if (ally == null)
+        {
+            // Not backing up for a run-up either — nothing to do.
+            if (blockingAlly == null || !blockingAlly.enabled)
+            {
+                blockingAlly = null;
+                return false;
+            }
+
+            ally = blockingAlly;
+        }
+
+        Vector2 feet = movement.GetFeetPosition();
+
+        if (jump != null && jump.CanJump && Time.time >= nextAllyJumpSearchTime)
+        {
+            nextAllyJumpSearchTime = Time.time + jump.searchInterval;
+
+            // Leaping from right up against the ally would clip it on take-off;
+            // the plain jump below backs up for a run-up instead.
+            if (chasing && GapTo(ally, direction) >= movement.allySpacing * 0.6f && TryStartJumpAttack(true))
+            {
+                blockingAlly = null;
+                return true;
+            }
+
+            Bounds targetBounds = default;
+            bool hasTarget = chasing && targeting.TryGetTargetBounds(out targetBounds);
+
+            blockingAlly = null;
+
+            if (jump.TryFindJumpPast(direction, ally.bounds, hasTarget, targetBounds, out Vector2 velocity, out float runUp))
+            {
+                if (velocity != Vector2.zero)
+                {
+                    StartJump(velocity);
+                    return true;
+                }
+
+                blockingAlly = ally;
+                allyRunUpX = runUp;
+            }
+        }
+
+        // Back up for the run-up, still facing the way it's going.
+        if (blockingAlly != null && Mathf.Abs(allyRunUpX - feet.x) > EnemyJump.ApproachTolerance)
+        {
+            float back = Mathf.Sign(allyRunUpX - feet.x);
+
+            if (movement.CanMove(back) && movement.GetAllyAhead(back) == null)
+            {
+                movement.Move(back);
+                movement.Face(direction);
+                return true;
+            }
+
+            blockingAlly = null;
+        }
+
+        movement.Stop();
+        movement.Face(direction);
+        return true;
+    }
+
+    // =========================
+    // NOTICED
+    // =========================
+
+    void StartNoticed(float duration)
+    {
+        noticeTimer = duration;
+        ChangeState(EnemyState.Noticed);
+    }
+
+    // Stops and faces the player for a moment, then charges.
+    void UpdateNoticed()
+    {
+        movement.Stop();
+
+        if (!targeting.HasTarget() || detection.IsPlayerDead())
+        {
+            ChangeState(EnemyState.Return);
+            return;
+        }
+
+        movement.Face(targeting.GetHorizontalDirectionToTarget());
+
+        noticeTimer -= Time.deltaTime;
+
+        if (noticeTimer <= 0f)
+            ChangeState(EnemyState.Chase);
+    }
+
+    // An ally spotted the player (EnemyGroupAlert). Joins in after its own
+    // noticed pause plus `delay` — unless it's already busy fighting.
+    public void HearAlarm(Transform player, float delay)
+    {
+        if (state != EnemyState.Patrol && state != EnemyState.Return && state != EnemyState.Search)
+            return;
+
+        if (player == null || detection == null || detection.IsPlayerDead())
+            return;
+
+        if (patrol != null && Mathf.Abs(player.position.x - patrol.HomeX) > leashDistance)
+            return;
+
+        detection.Notify();
+        targeting.SetTarget(player);
+
+        if (search != null)
+            search.RememberSighting(GetTargetGround());
+
+        StartNoticed(noticePause + delay);
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    // Lost the player: go and look where they were last seen if possible,
+    // otherwise head home. A dead player is never searched for.
+    void LoseTarget()
+    {
+        bool canSearch = search != null && search.HasSighting && !detection.IsPlayerDead() &&
+                         (patrol == null || Mathf.Abs(search.LastSeen.x - patrol.HomeX) <= leashDistance);
+
+        if (!canSearch)
+        {
+            ChangeState(EnemyState.Return);
+            return;
+        }
+
+        search.Begin(movement.GetFacingDirection());
+        ChangeState(EnemyState.Search);
+    }
+
+    void RememberSighting()
+    {
+        if (search != null && detection.CanSensePlayer())
+            search.RememberSighting(GetTargetGround());
+    }
+
+    // Walk to the last-seen spot (jumping if needed), then look left and
+    // right until the search runs out. Spotting the player again means an
+    // immediate chase — no noticed pause, it's already on edge.
+    void UpdateSearch()
+    {
+        if (TryNoticePlayer(false))
+            return;
+
+        if (search == null || IsTooFarFromHome())
+        {
+            ChangeState(EnemyState.Return);
+            return;
+        }
+
+        if (search.IsTravelling)
+        {
+            Vector2 goal = search.LastSeen;
+            Vector2 feet = movement.GetFeetPosition();
+            float toGoal = goal.x - feet.x;
+            bool there = Mathf.Abs(toGoal) <= search.arriveDistance && Mathf.Abs(goal.y - feet.y) <= levelDifference;
+
+            if (there || search.TravelTimedOut())
+            {
+                search.MarkArrived();
+            }
+            else
+            {
+                float direction = Mathf.Abs(toGoal) > 0.05f ? Mathf.Sign(toGoal) : movement.GetFacingDirection();
+
+                if (HandleBlockingAlly(direction, false))
+                    return;
+
+                if (Navigate(direction, goal, true))
+                    return;
+
+                if (!movement.CanMove(direction))
+                {
+                    // Blocked with no way round: search from here.
+                    if (jump == null || noWayFound)
+                        search.MarkArrived();
+                    else
+                        movement.Stop();
+
+                    return;
+                }
+
+                Walk(direction * search.searchSpeedMultiplier);
+                return;
+            }
+        }
+
+        movement.Stop();
+
+        if (search.LookAround(out float facing))
+            movement.Face(facing);
+        else
+            ChangeState(EnemyState.Return);
+    }
+
+    // Gap between this enemy's body and `other`'s, in `direction`.
+    float GapTo(Collider2D other, float direction)
+    {
+        Collider2D body = movement.GetBody();
+
+        if (body == null)
+            return float.PositiveInfinity;
+
+        return direction > 0f ? other.bounds.min.x - body.bounds.max.x : body.bounds.min.x - other.bounds.max.x;
+    }
+
+    bool IsAllyBetweenMeAndTarget()
+    {
+        if (!targeting.TryGetTargetBounds(out Bounds playerBounds))
+            return false;
+
+        float direction = targeting.GetHorizontalDirectionToTarget();
+
+        if (direction == 0f)
+            return false;
+
+        Collider2D body = movement.GetBody();
+        float myEdge = body != null ? (direction > 0f ? body.bounds.max.x : body.bounds.min.x) : transform.position.x;
+        float playerNear = direction > 0f ? playerBounds.min.x : playerBounds.max.x;
+
+        return movement.GetAllyAhead(direction, Mathf.Max(0f, (playerNear - myEdge) * direction)) != null;
+    }
+
+    static bool IsAllyMoving(Collider2D ally)
+    {
+        Rigidbody2D allyBody = ally.attachedRigidbody;
+        return allyBody != null && allyBody.linearVelocity.sqrMagnitude > 0.3f * 0.3f;
+    }
+
     static bool IsAlertState(EnemyState s)
     {
         return s == EnemyState.Chase || s == EnemyState.Attack || s == EnemyState.Jump ||
-               s == EnemyState.Retreat || s == EnemyState.JumpAttack;
+               s == EnemyState.Retreat || s == EnemyState.JumpAttack || s == EnemyState.Noticed;
     }
 
     void ChangeState(EnemyState next)
@@ -651,6 +979,7 @@ public class EnemyController : MonoBehaviour
 
         // A jump-from spot belongs to whatever the enemy was doing before.
         hasApproachPoint = false;
+        blockingAlly = null;
 
         // Every time the enemy closes in to attack, it throws a fresh combo.
         if (next == EnemyState.Attack)

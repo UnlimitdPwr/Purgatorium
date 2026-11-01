@@ -77,6 +77,12 @@ public class EnemyRetreat : MonoBehaviour
         if (!jump.CanJump)
             return false;
 
+        // Don't hop back towards an ally behind — waiting there, or walking up
+        // to wait — it may be standing where the hop lands by the time it
+        // does. Hold ground instead.
+        if (movement.GetAllyAhead(-facing, hopDistance + movement.allySpacing * 2f) != null)
+            return false;
+
         if (!jump.TryFindHop(-facing, hopDistance, hopHeight, out Vector2 velocity))
             return false;
 

@@ -145,18 +145,28 @@ public class EnemyJumpAttack : MonoBehaviour
     // plain sight, on about the same level and between minRange and
     // maxRange, rolls useChance — and on a hit, checks the leap can actually
     // be made (EnemyJump). True means "start a leap now" (then call Begin).
-    public bool TryChooseLeap(Vector2 targetGround)
+    //
+    // `skipChance`: leap whenever it's possible, without the dice roll or
+    // decisionInterval (used when another enemy is in the way). The cooldown
+    // and range/sight rules still apply.
+    public bool TryChooseLeap(Vector2 targetGround, bool skipChance = false)
     {
-        if (phase != Phase.Idle || cooldownTimer > 0f || Time.time < nextDecisionTime)
+        if (phase != Phase.Idle || cooldownTimer > 0f)
+            return false;
+
+        if (!skipChance && Time.time < nextDecisionTime)
             return false;
 
         if (!InLeapRange(targetGround))
             return false;
 
-        nextDecisionTime = Time.time + decisionInterval;
+        if (!skipChance)
+        {
+            nextDecisionTime = Time.time + decisionInterval;
 
-        if (Random.value >= useChance)
-            return false;
+            if (Random.value >= useChance)
+                return false;
+        }
 
         return jump.CanJump && TryPlanLeap(targetGround, out plannedVelocity);
     }
@@ -204,11 +214,16 @@ public class EnemyJumpAttack : MonoBehaviour
         if (phaseTimer > 0f)
             return;
 
-        // Aim at where the player is now; if that leap can't be made (they
-        // stepped behind a wall, off a ledge...), use the one planned at the
-        // start of the wind-up.
-        if (TryGetTargetGround(out Vector2 targetGround) && TryPlanLeap(targetGround, out Vector2 velocity))
-            plannedVelocity = velocity;
+        // Aim at where the player is now. If that leap can't be made any more
+        // (they stepped behind a wall, another enemy moved into the way...),
+        // call the leap off rather than fly an arc nobody checked.
+        if (!TryGetTargetGround(out Vector2 targetGround) || !TryPlanLeap(targetGround, out Vector2 velocity))
+        {
+            Cancel();
+            return;
+        }
+
+        plannedVelocity = velocity;
 
         movement.Face(plannedVelocity.x);
         jump.Hop(plannedVelocity);
@@ -288,8 +303,10 @@ public class EnemyJumpAttack : MonoBehaviour
                Mathf.Abs(targetGround.y - feet.y) <= maxHeightDifference;
     }
 
-    // A leap that lands landShortOfTarget in front of the player (or right
-    // at them, if there's no floor in front).
+    // A leap that lands landShortOfTarget in front of the player (or a
+    // little shorter, if that spot is taken). Never on top of the player —
+    // landing there just gets the enemy shoved off sideways, possibly into
+    // another enemy. No free floor in front of the player = no leap.
     bool TryPlanLeap(Vector2 targetGround, out Vector2 velocity)
     {
         Vector2 feet = movement.GetFeetPosition();
@@ -297,7 +314,7 @@ public class EnemyJumpAttack : MonoBehaviour
 
         float shortX = targetGround.x - toward * landShortOfTarget;
 
-        foreach (float x in new[] { shortX, targetGround.x })
+        foreach (float x in new[] { shortX, shortX - toward * 0.3f })
         {
             if (!jump.TryGetSurface(new Vector2(x, targetGround.y + 0.5f), 1f, out float y))
                 continue;

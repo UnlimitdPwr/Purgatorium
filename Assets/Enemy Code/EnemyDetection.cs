@@ -106,6 +106,17 @@ public class EnemyDetection : MonoBehaviour
         return null;
     }
 
+    // Treat the player as just sensed — an ally raised the alarm. Lets the
+    // enemy track them for memoryDuration even if it can't see them yet.
+    public void Notify()
+    {
+        if (player == null)
+            AcquirePlayer();
+
+        if (player != null && !IsPlayerDead())
+            lastSensedTime = Time.time;
+    }
+
     public bool IsPlayerDead()
     {
         return playerDeath != null && playerDeath.IsDead;

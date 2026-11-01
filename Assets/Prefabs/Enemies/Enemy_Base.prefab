@@ -601,6 +601,7 @@ GameObject:
   - component: {fileID: 3382770756477863066}
   - component: {fileID: 954123659506075102}
   - component: {fileID: 8812326189869069757}
+  - component: {fileID: 7276765846379740366}
   m_Layer: 0
   m_Name: Enemy_Base
   m_TagString: Untagged
@@ -766,7 +767,6 @@ MonoBehaviour:
   fallbackAttackRange: 1.1
   leashDistance: 15
   noticePause: 0.5
-  levelDifference: 0.5
   logStateChanges: 0
 --- !u!114 &7330873687997220374
 MonoBehaviour:
@@ -1134,3 +1134,16 @@ MonoBehaviour:
   maxHeightDifference: 2
   requireLineOfSight: 1
   responseDelay: {x: 0.1, y: 0.4}
+--- !u!114 &7276765846379740366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5931715529784031701}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e17a18ecb179348ad94c7152be000e1c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyNavigator
+  levelDifference: 0.5

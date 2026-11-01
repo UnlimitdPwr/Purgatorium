@@ -10,10 +10,12 @@ using Object = UnityEngine.Object;
 // checks what's already there, so it's safe to re-run.
 public static class LevelSystemsSetup
 {
-    // The optional enemy systems a fully set-up enemy has, in the order they're
-    // added. EnemyPrefabTool uses the same list for the Enemy_Base prefab.
+    // The enemy systems a fully set-up enemy has (beyond the ones
+    // EnemyController adds itself), in the order they're added.
+    // EnemyPrefabTool uses the same list for the Enemy_Base prefab.
     public static readonly Type[] EnemySystems =
     {
+        typeof(EnemyNavigator),
         typeof(EnemyPatrol),
         typeof(EnemyJump),
         typeof(EnemyRetreat),

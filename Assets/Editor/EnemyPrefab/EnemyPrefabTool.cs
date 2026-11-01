@@ -50,6 +50,15 @@ public static class EnemyPrefabTool
         EditorUtility.DisplayDialog(DialogTitle, CreatePrefab(enemy.gameObject), "OK");
     }
 
+    [MenuItem("Tools/Enemy Prefab/Add Missing Systems To Enemy_Base")]
+    public static void AddMissingSystemsMenu()
+    {
+        if (!CheckNotPlaying())
+            return;
+
+        EditorUtility.DisplayDialog(DialogTitle, AddMissingSystems(), "OK");
+    }
+
     [MenuItem("Tools/Enemy Prefab/Convert Enemies In Open Scene")]
     public static void ConvertOpenScene()
     {
@@ -86,6 +95,35 @@ public static class EnemyPrefabTool
         Debug.Log("EnemyPrefabTool: saved " + PrefabPath + " from '" + source.name + "'");
         return "Done — saved " + PrefabPath + " from '" + source.name + "'.\n\n" +
                "Next: Tools > Enemy Prefab > Convert Enemies In Open Scene.";
+    }
+
+    // Adds any enemy system Enemy_Base doesn't have yet (one added to
+    // LevelSystemsSetup.EnemySystems since it was built). Every instance gets
+    // it too. Returns a message saying what happened.
+    public static string AddMissingSystems()
+    {
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath) == null)
+            return "No " + PrefabPath + " yet — run Create Enemy_Base From Selected Enemy first.";
+
+        // Always saved, and the file compared afterwards: Unity fills in
+        // components EnemyController requires as soon as the prefab is loaded,
+        // so a loaded copy looks complete even when the file isn't.
+        string before = File.ReadAllText(PrefabPath);
+        GameObject root = PrefabUtility.LoadPrefabContents(PrefabPath);
+
+        try
+        {
+            LevelSystemsSetup.AddMissingEnemySystems(root);
+            PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(root);
+        }
+
+        return File.ReadAllText(PrefabPath) == before
+            ? "No change — Enemy_Base already has every enemy system."
+            : "Done — added the missing systems to Enemy_Base.";
     }
 
     // Converts every enemy in `scene` that isn't a prefab instance yet, then

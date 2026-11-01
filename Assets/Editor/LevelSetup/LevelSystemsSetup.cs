@@ -1,13 +1,31 @@
+using System;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 // Editor helper that wires the enemy/world systems into the open scene
 // (built for Scene2), so the scene never has to be hand-edited. Every step
 // checks what's already there, so it's safe to re-run.
 public static class LevelSystemsSetup
 {
+    // The optional enemy systems a fully set-up enemy has, in the order they're
+    // added. EnemyPrefabTool uses the same list for the Enemy_Base prefab.
+    public static readonly Type[] EnemySystems =
+    {
+        typeof(EnemyPatrol),
+        typeof(EnemyJump),
+        typeof(EnemyRetreat),
+        typeof(EnemyJumpAttack),
+        typeof(EnemyAttackToken),
+        typeof(EnemyLoot),
+        typeof(EnemyRespawn),
+        typeof(EnemyStatusOnHit),
+        typeof(EnemySearch),
+        typeof(EnemyGroupAlert),
+    };
+
     [MenuItem("Tools/Level Setup/Wire Enemy Systems Into Open Scene")]
     public static void WireOpenScene()
     {
@@ -23,16 +41,9 @@ public static class LevelSystemsSetup
         Scene scene = SceneManager.GetActiveScene();
         bool changed = false;
 
-        changed |= AddPatrolToEnemies();
-        changed |= AddToEnemies<EnemyJump>();
-        changed |= AddToEnemies<EnemyRetreat>();
-        changed |= AddToEnemies<EnemyJumpAttack>();
-        changed |= AddToEnemies<EnemyAttackToken>();
-        changed |= AddToEnemies<EnemyLoot>();
-        changed |= AddToEnemies<EnemyRespawn>();
-        changed |= AddToEnemies<EnemyStatusOnHit>();
-        changed |= AddToEnemies<EnemySearch>();
-        changed |= AddToEnemies<EnemyGroupAlert>();
+        foreach (EnemyController enemy in Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Include))
+            changed |= AddMissingEnemySystems(enemy.gameObject);
+
         changed |= AddPlayerStatsToPlayers();
 
         if (!changed)
@@ -51,17 +62,18 @@ public static class LevelSystemsSetup
     // ENEMY AI
     // =========================
 
-    static bool AddPatrolToEnemies()
+    // Adds every system in EnemySystems that the enemy doesn't have yet.
+    public static bool AddMissingEnemySystems(GameObject enemy)
     {
         bool changed = false;
 
-        foreach (EnemyController enemy in Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Include))
+        foreach (Type system in EnemySystems)
         {
-            if (enemy.GetComponent<EnemyPatrol>() != null)
+            if (enemy.GetComponent(system) != null)
                 continue;
 
-            Undo.AddComponent<EnemyPatrol>(enemy.gameObject);
-            Debug.Log("LevelSystemsSetup: added EnemyPatrol to '" + enemy.name + "'", enemy);
+            Undo.AddComponent(enemy, system);
+            Debug.Log("LevelSystemsSetup: added " + system.Name + " to '" + enemy.name + "'", enemy);
             changed = true;
         }
 
@@ -85,24 +97,6 @@ public static class LevelSystemsSetup
 
             Undo.AddComponent<PlayerStats>(player.gameObject);
             Debug.Log("LevelSystemsSetup: added PlayerStats to '" + player.name + "'", player);
-            changed = true;
-        }
-
-        return changed;
-    }
-
-    // Adds component T to every enemy that doesn't have it yet.
-    static bool AddToEnemies<T>() where T : Component
-    {
-        bool changed = false;
-
-        foreach (EnemyController enemy in Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Include))
-        {
-            if (enemy.GetComponent<T>() != null)
-                continue;
-
-            Undo.AddComponent<T>(enemy.gameObject);
-            Debug.Log("LevelSystemsSetup: added " + typeof(T).Name + " to '" + enemy.name + "'", enemy);
             changed = true;
         }
 

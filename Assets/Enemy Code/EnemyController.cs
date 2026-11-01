@@ -19,6 +19,11 @@ public enum EnemyState
 // Umbrella script for the enemy: runs the state machine and tells the other
 // enemy scripts what to do. It decides; they act — movement, sensing, patrol
 // and attacking all live in their own scripts.
+//
+// Movement, attack and targeting are used without null checks, so Unity adds
+// them along with this script. Every other enemy system is optional — leave
+// one off an enemy (or a prefab variant) to switch that behaviour off.
+[RequireComponent(typeof(EnemyMovement), typeof(EnemyAttack), typeof(EnemyTargeting))]
 public class EnemyController : MonoBehaviour
 {
     [Header("Attack")]

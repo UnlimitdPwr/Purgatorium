@@ -9,6 +9,10 @@ public class EnemyHitbox : MonoBehaviour
     private float statusMultiplier = 1f;
     private bool canDamage;
 
+    // Whether the player's parry / block works against the current attack.
+    private bool canBeParried = true;
+    private bool canBeBlocked = true;
+
     // The enemy's own statuses (its "element") — added to every hit this
     // hitbox lands, whichever attack switched it on.
     private EnemyStatusOnHit enemyStatus;
@@ -93,11 +97,16 @@ public class EnemyHitbox : MonoBehaviour
 
     // `statuses`: extra statuses only this attack adds. `multiplier` scales
     // the enemy's own statuses (EnemyStatusOnHit) for this attack.
-    public void EnableHitbox(int damageAmount, StatusInfliction[] statuses = null, float multiplier = 1f)
+    // `parryable` / `blockable`: false for attacks the player has to deal
+    // with some other way (EnemyAttackData.canBeParried / canBeBlocked).
+    public void EnableHitbox(int damageAmount, StatusInfliction[] statuses = null, float multiplier = 1f,
+                             bool parryable = true, bool blockable = true)
     {
         damage = damageAmount;
         statusOnHit = statuses;
         statusMultiplier = multiplier;
+        canBeParried = parryable;
+        canBeBlocked = blockable;
         canDamage = true;
 
         hitbox.enabled = true;
@@ -146,7 +155,7 @@ public class EnemyHitbox : MonoBehaviour
         // PARRY CHECK (before any damage logic)
         // =========================
 
-        ParryScript parry = other.GetComponentInParent<ParryScript>();
+        ParryScript parry = canBeParried ? other.GetComponentInParent<ParryScript>() : null;
 
         if (parry != null)
         {
@@ -172,6 +181,14 @@ public class EnemyHitbox : MonoBehaviour
                     health.ApplyParry();
                 }
 
+                // Puts the enemy in its Parried state — the player's opening.
+                EnemyController controller = GetComponentInParent<EnemyController>();
+
+                if (controller != null)
+                {
+                    controller.Parried();
+                }
+
                 return;
             }
         }
@@ -189,9 +206,9 @@ public class EnemyHitbox : MonoBehaviour
 
         // Checked before TakeDamage, which reduces the damage itself.
         BlockScript block = other.GetComponentInParent<BlockScript>();
-        bool blocked = block != null && block.IsBlocking;
+        bool blocked = canBeBlocked && block != null && block.IsBlocking;
 
-        playerHealth.TakeDamage(damage);
+        playerHealth.TakeDamage(damage, canBeBlocked);
 
         // Status buildup rides on the hit: the enemy's own statuses (scaled
         // for this attack) plus any extras the attack adds. A parried hit

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2abbceaaaf6f46d0898c5c10a31cbaf, type: 3}
+  m_Name: Overhead
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyAttackData
+  clip: {fileID: 7400000, guid: c3eeccae5be954710b5ca790b6f3d8e7, type: 2}
+  hitboxStart: 0.33333334
+  hitboxEnd: 0.5
+  windUp: 0.5
+  windUpTint: {r: 1, g: 0.25, b: 0.25, a: 1}
+  damageMultiplier: 1.5
+  statusMultiplier: 1
+  extraStatusOnHit: []
+  canBeParried: 0
+  canBeBlocked: 1
+  weight: 1
+  comboHesitation: {x: 0.15, y: 0.4}

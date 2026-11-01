@@ -13,7 +13,8 @@ public enum EnemyState
     Retreat,  // hopping back after a combo, then a short pause
     JumpAttack, // winding up, leaping at the player, landing (EnemyJumpAttack runs it)
     Search,   // lost the player — going to where it was last seen, then looking around
-    Noticed   // just spotted the player (or an ally raised the alarm) — a short pause before charging
+    Noticed,  // just spotted the player (or an ally raised the alarm) — a short pause before charging
+    Parried   // its attack was just parried — staggered and wide open until it recovers
 }
 
 // Umbrella script for the enemy: runs the state machine and tells the other
@@ -50,6 +51,11 @@ public class EnemyController : MonoBehaviour
              "Skipped when it spots them again while already searching. 0 = charge straight away.")]
     public float noticePause = 0.5f;
 
+    [Header("Parried")]
+    [Tooltip("Seconds the enemy is staggered after one of its attacks is parried — the " +
+             "player's opening. Longer than a plain knockback stun. The combo is over either way.")]
+    [Min(0f)] public float parriedDuration = 0.8f;
+
     [Header("Debug")]
     [SerializeField] private bool logStateChanges = false;
 
@@ -70,6 +76,7 @@ public class EnemyController : MonoBehaviour
     private EnemyGroupAlert groupAlert;
 
     private float noticeTimer;
+    private float parriedTimer;
 
     private EnemyState state = EnemyState.Patrol;
 
@@ -80,6 +87,10 @@ public class EnemyController : MonoBehaviour
 
     // (previous, next) — hook for animation/audio/debug UI.
     public event Action<EnemyState, EnemyState> OnStateChanged;
+
+    // One of this enemy's attacks was just parried — hook for sounds,
+    // effects, or items that reward a parry.
+    public event Action OnParried;
 
     void Awake()
     {
@@ -116,6 +127,10 @@ public class EnemyController : MonoBehaviour
         {
             ChangeState(EnemyState.Dead);
         }
+        else if (state == EnemyState.Parried)
+        {
+            // UpdateParried waits out the knockback that came with the parry.
+        }
         else if (knockback != null && knockback.IsKnockedBack)
         {
             ChangeState(EnemyState.Stunned);
@@ -142,6 +157,7 @@ public class EnemyController : MonoBehaviour
             case EnemyState.JumpAttack: UpdateJumpAttack(); break;
             case EnemyState.Search:  UpdateSearch();  break;
             case EnemyState.Noticed: UpdateNoticed(); break;
+            case EnemyState.Parried: UpdateParried(); break;
         }
     }
 
@@ -455,6 +471,45 @@ public class EnemyController : MonoBehaviour
     }
 
     // =========================
+    // PARRIED
+    // =========================
+
+    // Called by EnemyHitbox when the player parries one of this enemy's
+    // attacks (the swing or the leap).
+    public void Parried()
+    {
+        if (state == EnemyState.Dead)
+            return;
+
+        parriedTimer = parriedDuration;
+        ChangeState(EnemyState.Parried);
+        OnParried?.Invoke();
+    }
+
+    // Staggered: no AI until both the parry stagger and its knockback are
+    // over. Then straight back after the player if it's still around.
+    void UpdateParried()
+    {
+        movement.Stop();
+
+        parriedTimer -= Time.deltaTime;
+
+        if (parriedTimer > 0f || (knockback != null && knockback.IsKnockedBack))
+            return;
+
+        if (status != null && status.IsStunned)
+        {
+            ChangeState(EnemyState.Stunned);
+            return;
+        }
+
+        if (RefreshTarget())
+            ChangeState(EnemyState.Chase);
+        else
+            LoseTarget();
+    }
+
+    // =========================
     // HELPERS
     // =========================
 
@@ -723,6 +778,13 @@ public class EnemyController : MonoBehaviour
 
         switch (exiting)
         {
+            // Interrupted mid-swing (parried, knocked back, killed) — stop the
+            // swing and its hitbox. Leaving between swings ends the combo; the
+            // next Attack starts a fresh one anyway.
+            case EnemyState.Attack:
+                attack.Cancel();
+                break;
+
             case EnemyState.Retreat:
                 if (retreat != null)
                     retreat.Cancel();

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
@@ -97,6 +99,91 @@ public static class EnemyAttackSetup
         AssetDatabase.SaveAssets();
 
         Debug.Log("EnemyAttackSetup: Attack1 transitions fixed in " + path);
+    }
+
+    // =========================
+    // STATES FOR ATTACK ASSETS
+    // =========================
+
+    // EnemyAnimation plays an attack asset's clip through the Animator state
+    // named after it, and a parry through "TakeHit". This adds whichever of
+    // those states EnemyAnimator.controller is missing, each one returning to
+    // Idle the moment its clip ends — the same setup as Attack1. Safe to re-run.
+    [MenuItem("Tools/Enemy Attack/Add Animator States For Attacks")]
+    public static void AddAnimatorStatesMenu()
+    {
+        EditorUtility.DisplayDialog("Enemy Attack Setup", AddAnimatorStates(), "OK");
+    }
+
+    public static string AddAnimatorStates()
+    {
+        string path = AssetDatabase.GUIDToAssetPath(EnemyAnimatorGuid);
+        AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
+
+        if (controller == null)
+            return "EnemyAnimator.controller not found.";
+
+        AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
+        AnimatorState idle = FindState(stateMachine, IdleStateName);
+
+        if (idle == null)
+            return "No Idle state in " + path + ".";
+
+        // Every clip an attack asset uses, plus the parried reaction (the
+        // HeroKnight TakeHit clip next to the controller).
+        var clips = new List<AnimationClip>();
+
+        foreach (string guid in AssetDatabase.FindAssets("t:EnemyAttackData"))
+        {
+            var data = AssetDatabase.LoadAssetAtPath<EnemyAttackData>(AssetDatabase.GUIDToAssetPath(guid));
+
+            if (data != null && data.clip != null && !clips.Contains(data.clip))
+                clips.Add(data.clip);
+        }
+
+        string hitClipPath = Path.Combine(Path.GetDirectoryName(path), EnemyAnimation.ParriedStateName + ".anim");
+        AnimationClip hitClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(hitClipPath);
+
+        if (hitClip != null && !clips.Contains(hitClip))
+            clips.Add(hitClip);
+
+        // New states go in a column under Idle in the Animator window.
+        Vector3 idlePosition = Vector3.zero;
+
+        foreach (ChildAnimatorState child in stateMachine.states)
+        {
+            if (child.state == idle)
+                idlePosition = child.position;
+        }
+
+        var added = new List<string>();
+
+        foreach (AnimationClip clip in clips)
+        {
+            if (FindState(stateMachine, clip.name) != null)
+                continue;
+
+            AnimatorState state = stateMachine.AddState(clip.name, idlePosition + new Vector3(0f, 60f * (added.Count + 2), 0f));
+            state.motion = clip;
+
+            AnimatorStateTransition toIdle = state.AddTransition(idle);
+            toIdle.hasExitTime = true;
+            toIdle.exitTime = 1f;
+            toIdle.duration = 0f;
+            toIdle.hasFixedDuration = true;
+
+            added.Add(clip.name);
+        }
+
+        if (added.Count == 0)
+            return "No change — EnemyAnimator already has a state for every attack and for TakeHit.";
+
+        EditorUtility.SetDirty(controller);
+        AssetDatabase.SaveAssets();
+
+        string message = "Added " + string.Join(", ", added) + " to EnemyAnimator.";
+        Debug.Log("EnemyAttackSetup: " + message);
+        return "Done — " + message;
     }
 
     static AnimatorState FindState(AnimatorStateMachine stateMachine, string name)

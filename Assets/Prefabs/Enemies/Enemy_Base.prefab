@@ -767,6 +767,7 @@ MonoBehaviour:
   fallbackAttackRange: 1.1
   leashDistance: 15
   noticePause: 0.5
+  parriedDuration: 0.8
   logStateChanges: 0
 --- !u!114 &7330873687997220374
 MonoBehaviour:
@@ -826,6 +827,8 @@ MonoBehaviour:
   - status: 1
     buildup: 20
   attackCooldown: 1
+  attacks:
+  - {fileID: 11400000, guid: ed527864080294b2695bcc941b714585, type: 2}
   minComboSwings: 1
   maxComboSwings: 3
   comboSwingDelay: 0.15

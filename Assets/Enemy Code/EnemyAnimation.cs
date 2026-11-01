@@ -16,6 +16,12 @@ public class EnemyAnimation : MonoBehaviour
     private const string JumpAttackWindUpTrigger = "JumpAttackWindUp";
     private const string JumpAttackTrigger = "JumpAttack";
     private const string NoticedTrigger = "Noticed";
+    private const string ParriedTrigger = "Parried";
+
+    // Animator state played when the enemy's attack is parried, if the
+    // Animator has it (Tools > Enemy Attack > Add Animator States For Attacks
+    // adds it). Without it, the optional "Parried" trigger fires instead.
+    public const string ParriedStateName = "TakeHit";
 
     [Header("Noticed")]
     [Tooltip("Show a \"!\" over the enemy's head while it's in its noticed pause " +
@@ -48,6 +54,7 @@ public class EnemyAnimation : MonoBehaviour
 
     private Color baseColor = Color.white;
     private float flashTimer;
+    private Color flashTint;
 
     // Names of the parameters the Animator actually has.
     private readonly HashSet<string> parameters = new HashSet<string>();
@@ -95,6 +102,9 @@ public class EnemyAnimation : MonoBehaviour
         // Just spotted the player — fires "Noticed" once that exists.
         if (next == EnemyState.Noticed)
             SetOptionalTrigger(NoticedTrigger);
+
+        if (next == EnemyState.Parried)
+            PlayParried();
     }
 
     void UpdateMovementAnimation()
@@ -126,6 +136,30 @@ public class EnemyAnimation : MonoBehaviour
         animator.SetTrigger("Attack");
     }
 
+    // Plays an attack's own swing: straight into the Animator state named
+    // after the clip, or the plain "Attack" trigger if there's no such state.
+    public void PlayAttack(AnimationClip clip)
+    {
+        if (!TryPlayState(clip != null ? clip.name : null))
+            PlayAttack();
+    }
+
+    // Telegraphs an attack: pulses the sprite `tint` for `duration` seconds.
+    public void PlayAttackWindUp(float duration, Color tint)
+    {
+        flashTint = tint;
+        flashTimer = duration;
+    }
+
+    // The enemy's attack was just parried.
+    public void PlayParried()
+    {
+        StopWindUpFlash();
+
+        if (!TryPlayState(ParriedStateName))
+            SetOptionalTrigger(ParriedTrigger);
+    }
+
     // No jump animation yet — fires the "Jump" trigger once one exists.
     public void PlayJump()
     {
@@ -145,7 +179,7 @@ public class EnemyAnimation : MonoBehaviour
         SetOptionalTrigger(JumpAttackWindUpTrigger);
 
         if (flashDuringWindUp)
-            flashTimer = duration;
+            PlayAttackWindUp(duration, windUpTint);
     }
 
     // The leap itself — fires "JumpAttack" once that exists.
@@ -253,7 +287,22 @@ public class EnemyAnimation : MonoBehaviour
         }
 
         float pulse = Mathf.PingPong(Time.time * windUpFlashRate * 2f, 1f);
-        spriteRenderer.color = Color.Lerp(baseColor, windUpTint, pulse);
+        spriteRenderer.color = Color.Lerp(baseColor, flashTint, pulse);
+    }
+
+    // Jumps straight to a base-layer state, if the Animator has one by that name.
+    bool TryPlayState(string stateName)
+    {
+        if (animator == null || string.IsNullOrEmpty(stateName))
+            return false;
+
+        int hash = Animator.StringToHash(stateName);
+
+        if (!animator.HasState(0, hash))
+            return false;
+
+        animator.Play(hash, 0, 0f);
+        return true;
     }
 
     void SetOptionalTrigger(string name)

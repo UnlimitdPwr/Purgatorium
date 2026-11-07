@@ -43,8 +43,8 @@ public static class LevelBlockout01Builder
     static readonly Color WallJumpColor = new Color(0.3f, 0.5f, 0.9f);
     static readonly Color LadderColor = new Color(0.95f, 0.8f, 0.3f, 0.8f);
 
-    static readonly Color EnemyMarker = new Color(1f, 0.25f, 0.25f);
-    static readonly Color BossMarker = new Color(0.8f, 0f, 0.6f);
+    internal static readonly Color EnemyMarker = new Color(1f, 0.25f, 0.25f);
+    internal static readonly Color BossMarker = new Color(0.8f, 0f, 0.6f);
     static readonly Color ChestMarker = new Color(1f, 0.85f, 0.1f);
     static readonly Color PickupMarker = new Color(0.3f, 0.9f, 1f);
 
@@ -85,13 +85,8 @@ public static class LevelBlockout01Builder
     // Does the work without dialogs. Returns a message; starts with "Done" on success.
     public static string Build()
     {
-        square = AssetDatabase.LoadAssetAtPath<Sprite>(SquareSpritePath);
-
-        if (square == null)
-            return Fail("Couldn't load the square sprite at " + SquareSpritePath +
-                        " — is the 2D Sprite package installed?");
-
-        noFriction = LoadOrCreateNoFrictionMaterial();
+        if (!LoadPieceAssets(out string assetError))
+            return Fail(assetError);
 
         Scene scene;
 
@@ -130,6 +125,24 @@ public static class LevelBlockout01Builder
         string message = "Done — " + ScenePath + " built and saved.";
         Debug.Log("LevelBlockout01Builder: " + message);
         return message;
+    }
+
+    // Loads the sprite and no-friction material the PIECES below use, so other
+    // editor tools (e.g. SceneFeatureSync's test strip) can build with them.
+    internal static bool LoadPieceAssets(out string error)
+    {
+        error = null;
+        square = AssetDatabase.LoadAssetAtPath<Sprite>(SquareSpritePath);
+
+        if (square == null)
+        {
+            error = "Couldn't load the square sprite at " + SquareSpritePath +
+                    " — is the 2D Sprite package installed?";
+            return false;
+        }
+
+        noFriction = LoadOrCreateNoFrictionMaterial();
+        return true;
     }
 
     static string Fail(string error)
@@ -354,7 +367,7 @@ public static class LevelBlockout01Builder
     // PIECES
     // =========================
 
-    static Transform Group(Transform parent, string name)
+    internal static Transform Group(Transform parent, string name)
     {
         GameObject go = new GameObject(name);
         go.transform.SetParent(parent, false);
@@ -362,12 +375,12 @@ public static class LevelBlockout01Builder
     }
 
     // A thin platform whose top surface is at `top`.
-    static GameObject Platform(Transform parent, string name, float x1, float x2, float top)
+    internal static GameObject Platform(Transform parent, string name, float x1, float x2, float top)
     {
         return Solid(parent, name, x1, top - Thickness, x2, top);
     }
 
-    static GameObject Solid(Transform parent, string name, float x1, float y1, float x2, float y2)
+    internal static GameObject Solid(Transform parent, string name, float x1, float y1, float x2, float y2)
     {
         return Box(parent, name, x1, y1, x2, y2, SolidColor, true);
     }
@@ -407,7 +420,7 @@ public static class LevelBlockout01Builder
         sr.sortingOrder = -10;
     }
 
-    static void Crumbling(Transform parent, string name, float x1, float x2, float top)
+    internal static void Crumbling(Transform parent, string name, float x1, float x2, float top)
     {
         GameObject go = new GameObject(name);
         go.transform.SetParent(parent, false);
@@ -428,20 +441,20 @@ public static class LevelBlockout01Builder
         go.AddComponent<CrumblingPlatform>();
     }
 
-    static void Breakable(Transform parent, string name, float x1, float y1, float x2, float y2)
+    internal static void Breakable(Transform parent, string name, float x1, float y1, float x2, float y2)
     {
         GameObject go = Box(parent, name, x1, y1, x2, y2, BreakableColor, true);
         go.AddComponent<BreakableWall>();
     }
 
-    static void WallJumpWall(Transform parent, string name, float x1, float y1, float x2, float y2)
+    internal static void WallJumpWall(Transform parent, string name, float x1, float y1, float x2, float y2)
     {
         GameObject go = Box(parent, name, x1, y1, x2, y2, WallJumpColor, true);
         go.AddComponent<WallJumpSurface>();
     }
 
     // Look and behaviour come from the HazardType asset (Assets/Level Code/Hazards/Types).
-    static void Hazard(Transform parent, string name, string typeName, float x1, float y1, float x2, float y2)
+    internal static void Hazard(Transform parent, string name, string typeName, float x1, float y1, float x2, float y2)
     {
         HazardType type = HazardSetup.EnsureHazardType(typeName);
 
@@ -454,7 +467,7 @@ public static class LevelBlockout01Builder
         go.AddComponent<EnvironmentalHazard>().Configure(type, new Vector2(x2 - x1, y2 - y1));
     }
 
-    static LevelGate Gate(Transform parent, string name, float x1, float y1, float x2, float y2, bool startsOpen)
+    internal static LevelGate Gate(Transform parent, string name, float x1, float y1, float x2, float y2, bool startsOpen)
     {
         GameObject go = Box(parent, name, x1, y1, x2, y2, GateColor, true);
         LevelGate gate = go.AddComponent<LevelGate>();
@@ -467,7 +480,7 @@ public static class LevelBlockout01Builder
     }
 
     // The ladder is placed in its lowered position and starts raised by `raisedHeight`.
-    static Ladder LadderAt(Transform parent, string name, float x1, float y1, float x2, float y2, float raisedHeight)
+    internal static Ladder LadderAt(Transform parent, string name, float x1, float y1, float x2, float y2, float raisedHeight)
     {
         GameObject go = Box(parent, name, x1, y1, x2, y2, LadderColor, false);
         Ladder ladder = go.AddComponent<Ladder>();
@@ -480,7 +493,7 @@ public static class LevelBlockout01Builder
         return ladder;
     }
 
-    static void Encounter(Transform parent, string name, float x1, float y1, float x2, float y2,
+    internal static void Encounter(Transform parent, string name, float x1, float y1, float x2, float y2,
                           LevelGate[] gates, Ladder[] ladders)
     {
         GameObject go = new GameObject(name);
@@ -507,7 +520,7 @@ public static class LevelBlockout01Builder
             property.GetArrayElementAtIndex(i).objectReferenceValue = items[i];
     }
 
-    static void Marker(Transform parent, string label, float x, float y, Color color)
+    internal static void Marker(Transform parent, string label, float x, float y, Color color)
     {
         GameObject go = new GameObject("Marker - " + label);
         go.transform.SetParent(parent, false);

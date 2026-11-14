@@ -74,9 +74,7 @@ public class ParryScript : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         status = GetComponent<PlayerStatusEffects>();
 
-        shield = GetComponent<PlayerShield>();
-        if (shield == null)
-            shield = gameObject.AddComponent<PlayerShield>();
+        shield = PlayerShield.GetOrAdd(gameObject);
 
         talismans = PlayerTalismans.GetOrAdd(gameObject);
     }

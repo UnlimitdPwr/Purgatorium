@@ -27,18 +27,23 @@ public class PlayerShield : MonoBehaviour
     // Fired once when a shield's durability reaches 0.
     public event Action<ShieldData> OnShieldBroken;
 
-    private void Awake()
+    public static PlayerShield GetOrAdd(GameObject player)
     {
-        equipment = GetComponent<EquipmentManager>();
-        stats = GetComponent<PlayerStats>();
+        PlayerShield shield = player.GetComponent<PlayerShield>();
+        return shield != null ? shield : player.AddComponent<PlayerShield>();
     }
+
+    // References are fetched lazily, so this works whatever order components
+    // were added / woke up in.
+    private EquipmentManager Equipment => equipment != null ? equipment : (equipment = GetComponent<EquipmentManager>());
+    private PlayerStats Stats => stats != null ? stats : (stats = GetComponent<PlayerStats>());
 
     // =========================
     // WHICH SHIELD
     // =========================
 
     // The equipped active shield, broken or not (null if none / not a ShieldData).
-    public ShieldData Equipped => equipment != null ? equipment.ActiveShield as ShieldData : null;
+    public ShieldData Equipped => Equipment != null ? Equipment.ActiveShield as ShieldData : null;
 
     // The shield that's actually doing anything: equipped and not broken.
     public ShieldData Working
@@ -54,9 +59,9 @@ public class PlayerShield : MonoBehaviour
     // STAT SCALING
     // =========================
 
-    private int StrengthLevel => stats != null ? stats.StrengthLevel : 1;
-    private int DexterityLevel => stats != null ? stats.DexterityLevel : 1;
-    private int SoulDurabilityLevel => stats != null ? stats.SoulDurabilityLevel : 1;
+    private int StrengthLevel => Stats != null ? Stats.StrengthLevel : 1;
+    private int DexterityLevel => Stats != null ? Stats.DexterityLevel : 1;
+    private int SoulDurabilityLevel => Stats != null ? Stats.SoulDurabilityLevel : 1;
 
     public float StrengthBonus(ShieldData shield) =>
         StatScaling.GetBonus(shield.strengthScaling, StrengthLevel);

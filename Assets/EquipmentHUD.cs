@@ -35,6 +35,17 @@ public class EquipmentHUD : MonoBehaviour
         RefreshHUD();
     }
 
+    // This function adds the shield durability bar under the shield icon if the scene has none.
+    private void Start()
+    {
+        if (shieldIcon != null &&
+            equipmentManager != null &&
+            FindAnyObjectByType<ShieldDurabilityBar>(FindObjectsInactive.Include) == null)
+        {
+            gameObject.AddComponent<ShieldDurabilityBar>().Setup(equipmentManager, shieldIcon);
+        }
+    }
+
     // This function removes event subscriptions when the HUD is disabled.
     private void OnDisable()
     {

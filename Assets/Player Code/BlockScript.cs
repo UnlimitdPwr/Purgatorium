@@ -37,9 +37,7 @@ public class BlockScript : MonoBehaviour
         playerAnimation = GetComponent<PlayerAnimation>();
         status = GetComponent<PlayerStatusEffects>();
 
-        shield = GetComponent<PlayerShield>();
-        if (shield == null)
-            shield = gameObject.AddComponent<PlayerShield>();
+        shield = PlayerShield.GetOrAdd(gameObject);
 
         talismans = PlayerTalismans.GetOrAdd(gameObject);
     }

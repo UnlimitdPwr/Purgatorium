@@ -28,15 +28,17 @@ public class PlayerStamina : MonoBehaviour
     private DashScript dash;
     private PlayerStatusEffects status;
     private PlayerStats playerStats;
+    private PlayerTalismans talismans;
 
     public float CurrentStamina => currentStamina;
 
     // Used only when the Player has no PlayerStats component.
     private const float FallbackMaxStamina = 100f;
 
-    // Gets maximum stamina from PlayerStats.
+    // Gets maximum stamina from PlayerStats, x any talisman multiplier.
     public float MaxStamina =>
-        playerStats != null ? playerStats.MaxStamina : FallbackMaxStamina;
+        (playerStats != null ? playerStats.MaxStamina : FallbackMaxStamina) *
+        (talismans != null ? talismans.GetMultiplier(TalismanEffect.MaxStamina) : 1f);
 
     public float StaminaPercent =>
         MaxStamina > 0f ? currentStamina / MaxStamina : 0f;
@@ -56,6 +58,8 @@ public class PlayerStamina : MonoBehaviour
     {
         // This function initializes stamina and connects the stamina system to PlayerStats.
         playerStats = GetComponent<PlayerStats>();
+        talismans = PlayerTalismans.GetOrAdd(gameObject);
+        talismans.OnTalismansChanged += OnTalismansChanged;
 
         if (playerStats == null)
         {
@@ -85,6 +89,9 @@ public class PlayerStamina : MonoBehaviour
         {
             playerStats.OnStatsChanged -= OnStatsChanged;
         }
+
+        if (talismans != null)
+            talismans.OnTalismansChanged -= OnTalismansChanged;
     }
 
     private void Update()
@@ -111,6 +118,7 @@ public class PlayerStamina : MonoBehaviour
         else if (!dashing)
         {
             float regenMultiplier = status != null ? status.StaminaRegenMultiplier : 1f;
+            regenMultiplier *= talismans.GetMultiplier(TalismanEffect.StaminaRegen);
 
             Regenerate(
                 regenPerSecond *
@@ -200,6 +208,12 @@ public class PlayerStamina : MonoBehaviour
             currentStamina,
             MaxStamina
         );
+    }
+
+    // Talismans changed: keep stamina within the (possibly lower) max.
+    private void OnTalismansChanged()
+    {
+        SetStamina(Mathf.Min(currentStamina, MaxStamina));
     }
 
     private void OnStatsChanged()

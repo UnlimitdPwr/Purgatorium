@@ -9,8 +9,13 @@ public class ParryScript : MonoBehaviour
     // CONFIG
     // =========================
 
-    [Header("Parry Window")]
-    [Tooltip("Seconds after TryParry() before the parry window opens.")]
+    // These are the player's BASE parry values. The active shield (PlayerShield)
+    // multiplies them and adds Dexterity scaling; with no shield (or a broken
+    // one) they're used as-is.
+
+    [Header("Parry Window (player base)")]
+    [Tooltip("Seconds after TryParry() before the parry window opens. " +
+             "Tuned for the ~0.42s HeroKnight_Block clip.")]
     [SerializeField] private float startDelay = 0.05f;
 
     [Tooltip("How long the parry window stays open, in seconds.")]
@@ -38,6 +43,8 @@ public class ParryScript : MonoBehaviour
     private PlayerAnimation playerAnimation;
     private SpriteRenderer spriteRenderer;
     private PlayerStatusEffects status;
+    private PlayerShield shield;
+    private PlayerTalismans talismans;
 
     // =========================
     // STATE
@@ -62,6 +69,17 @@ public class ParryScript : MonoBehaviour
     public event Action OnParryEnded;
 
     // Fired once when an incoming attack is successfully parried.
+    // Base value -> after the active shield's multipliers and stat scaling.
+    private float StartDelay => shield.GetParryStartDelay(startDelay);
+    private float WindowDuration =>
+        shield.GetParryWindow(windowDuration) * talismans.GetMultiplier(TalismanEffect.ParryWindow);
+    private float Cooldown =>
+        shield.GetParryCooldown(cooldown) * talismans.GetMultiplier(TalismanEffect.ParryCooldown);
+    private bool RequireFacing => shield.GetParryRequiresFacing(requireFacing);
+
+    // Fired once when an incoming attack is successfully parried. The argument is
+    // the attacker's root GameObject (may be null). Hook VFX / audio here without
+    // editing this script.
     public event Action<GameObject> OnParrySuccess;
 
     // =========================
@@ -74,6 +92,10 @@ public class ParryScript : MonoBehaviour
         playerAnimation = GetComponent<PlayerAnimation>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         status = GetComponent<PlayerStatusEffects>();
+
+        shield = PlayerShield.GetOrAdd(gameObject);
+
+        talismans = PlayerTalismans.GetOrAdd(gameObject);
     }
 
     // Resets the parry state if the player is disabled during a parry.
@@ -100,7 +122,7 @@ public class ParryScript : MonoBehaviour
         if (IsOnCooldown || IsParrying)
             return;
 
-        nextParryTime = Time.time + cooldown;
+        nextParryTime = Time.time + Cooldown;
 
         // Mark the complete parry action as active.
         IsParrying = true;
@@ -144,8 +166,10 @@ public class ParryScript : MonoBehaviour
     {
         windowOpen = false;
 
-        if (startDelay > 0f)
-            yield return new WaitForSeconds(startDelay);
+        float delay = StartDelay;
+
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
 
         windowOpen = true;
 
@@ -153,7 +177,7 @@ public class ParryScript : MonoBehaviour
             ? status.ParryWindowMultiplier
             : 1f;
 
-        yield return new WaitForSeconds(windowDuration * windowMultiplier);
+        yield return new WaitForSeconds(WindowDuration * windowMultiplier);
 
         windowOpen = false;
         windowRoutine = null;
@@ -185,8 +209,12 @@ public class ParryScript : MonoBehaviour
         if (!windowOpen)
             return false;
 
-        if (requireFacing && !IsFacingSource(attackSourcePosition))
+        if (RequireFacing && !IsFacingSource(attackSourcePosition))
             return false;
+
+        // Status first, then wear, so the parry that breaks a shield still counts.
+        shield.ApplyStatusOnParry(attacker);
+        shield.WearFromParry();
 
         OnParrySuccess?.Invoke(attacker);
 

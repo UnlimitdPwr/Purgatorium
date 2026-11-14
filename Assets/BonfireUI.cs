@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections;
 
 public class BonfireUI : MonoBehaviour
@@ -27,6 +28,10 @@ public class BonfireUI : MonoBehaviour
     private PlayerController1 playerController;
     private Bonfire currentBonfire;
     public bool IsEquipmentScreenOpen { get; private set; }
+
+    // Fired when the player leaves the bonfire. BonfireSaveManager saves again
+    // here so stat upgrades and equipment changes made while resting are kept.
+    public static event Action OnLeft;
 
     private Coroutine transitionCoroutine;
 
@@ -218,6 +223,8 @@ public class BonfireUI : MonoBehaviour
         transitionCoroutine = null;
 
         Debug.Log("Player left the bonfire.");
+
+        OnLeft?.Invoke();
     }
 
 

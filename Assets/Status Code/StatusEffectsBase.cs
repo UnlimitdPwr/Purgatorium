@@ -109,7 +109,7 @@ public abstract class StatusEffectsBase : MonoBehaviour, IStatusReceiver
             if (meter.IsConditionActive)
                 ConditionUpdate(meter, Time.deltaTime);
 
-            if (meter.Tick(Time.deltaTime, recoveryRate, BuildupRecedes))
+            if (meter.Tick(Time.deltaTime, recoveryRate * GearRecoveryMultiplier, BuildupRecedes))
                 EndCondition(meter);
         }
     }
@@ -152,8 +152,13 @@ public abstract class StatusEffectsBase : MonoBehaviour, IStatusReceiver
 
     float ScaleBuildup(StatusType type, float amount)
     {
-        return amount * buildupRate * GetBuildupMultiplier(type);
+        return amount * buildupRate * GetBuildupMultiplier(type) * GearBuildupMultiplier(type);
     }
+
+    // Extra buildup / recovery multipliers from equipment (player talismans).
+    // 1 = none; multiplies with the values above.
+    protected virtual float GearBuildupMultiplier(StatusType type) => 1f;
+    protected virtual float GearRecoveryMultiplier => 1f;
 
     // The per-status multiplier from the resistance list (1 if not listed).
     public float GetBuildupMultiplier(StatusType type)

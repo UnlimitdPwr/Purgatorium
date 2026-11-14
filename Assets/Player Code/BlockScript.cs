@@ -4,7 +4,10 @@ using UnityEngine;
 
 public class BlockScript : MonoBehaviour
 {
-    [Header("Blocking")]
+    // These are the player's BASE block values. The active shield (PlayerShield)
+    // multiplies them and adds Strength scaling; with no shield (or a broken one)
+    // they're used as-is.
+    [Header("Blocking (player base)")]
     [SerializeField, Range(0f, 1f)]
     private float blockDamageReduction = 0.6f;
 
@@ -15,6 +18,17 @@ public class BlockScript : MonoBehaviour
     private bool isBlocking;
     private PlayerAnimation playerAnimation;
     private PlayerStatusEffects status;
+    private PlayerShield shield;
+    private PlayerTalismans talismans;
+
+    // Base value -> after the active shield's multipliers and stat scaling.
+    // ...then x any talisman multiplier (capped at 100%).
+    private float DamageReduction => Mathf.Clamp01(
+        shield.GetBlockDamageReduction(blockDamageReduction) *
+        talismans.GetMultiplier(TalismanEffect.BlockDamageReduction));
+    private float StatusReduction => Mathf.Clamp01(
+        shield.GetBlockStatusReduction(blockStatusReduction) *
+        talismans.GetMultiplier(TalismanEffect.BlockStatusReduction));
 
     public bool IsBlocking => isBlocking;
 
@@ -26,6 +40,10 @@ public class BlockScript : MonoBehaviour
     {
         playerAnimation = GetComponent<PlayerAnimation>();
         status = GetComponent<PlayerStatusEffects>();
+
+        shield = PlayerShield.GetOrAdd(gameObject);
+
+        talismans = PlayerTalismans.GetOrAdd(gameObject);
     }
 
     // =========================
@@ -66,6 +84,9 @@ public class BlockScript : MonoBehaviour
 
         Debug.Log("Attack blocked!");
 
+        // Blocking wears the shield's Soul Durability.
+        shield.WearFromBlock();
+
         if (playerAnimation != null)
             playerAnimation.PlayBlockHitAnimation();
 
@@ -85,7 +106,7 @@ public class BlockScript : MonoBehaviour
         if (incomingDamage <= 0)
             return 0;
 
-        float damageMultiplier = 1f - blockDamageReduction * Effectiveness;
+        float damageMultiplier = 1f - DamageReduction * Effectiveness;
 
         int blockedDamage = Mathf.FloorToInt(
             incomingDamage * damageMultiplier + 0.0001f
@@ -100,7 +121,7 @@ public class BlockScript : MonoBehaviour
         if (incomingBuildup <= 0f)
             return 0f;
 
-        return incomingBuildup * (1f - blockStatusReduction * Effectiveness);
+        return incomingBuildup * (1f - StatusReduction * Effectiveness);
     }
 }
 

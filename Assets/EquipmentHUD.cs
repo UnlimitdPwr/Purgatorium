@@ -17,9 +17,9 @@ public class EquipmentHUD : MonoBehaviour
     [Header("Shield Slot")]
     [SerializeField] private Image shieldIcon;
 
-    // These fields track the equipment slots currently selected during gameplay.
+    // The quick slot currently selected during gameplay. (The active shield lives in
+    // EquipmentManager, because parry and block need to read it too.)
     private int selectedQuickSlot = -1;
-    private int selectedShieldSlot = -1;
 
     // This function subscribes to inventory and equipment changes,
     // selects initial equipment, and refreshes the HUD.
@@ -33,6 +33,17 @@ public class EquipmentHUD : MonoBehaviour
 
         SelectFirstAvailableSlots();
         RefreshHUD();
+    }
+
+    // This function adds the shield durability bar under the shield icon if the scene has none.
+    private void Start()
+    {
+        if (shieldIcon != null &&
+            equipmentManager != null &&
+            FindAnyObjectByType<ShieldDurabilityBar>(FindObjectsInactive.Include) == null)
+        {
+            gameObject.AddComponent<ShieldDurabilityBar>().Setup(equipmentManager, shieldIcon);
+        }
     }
 
     // This function removes event subscriptions when the HUD is disabled.
@@ -71,7 +82,6 @@ public class EquipmentHUD : MonoBehaviour
     private void SelectFirstAvailableSlots()
     {
         selectedQuickSlot = FindNextQuickItem(-1);
-        selectedShieldSlot = FindNextShield(-1);
     }
 
     // This function refreshes the selected items and their displayed icons.
@@ -86,9 +96,6 @@ public class EquipmentHUD : MonoBehaviour
         // If a selected item was removed, select another occupied slot.
         if (!IsQuickSlotUsable(selectedQuickSlot))
             selectedQuickSlot = FindNextQuickItem(selectedQuickSlot);
-
-        if (!IsShieldSlotUsable(selectedShieldSlot))
-            selectedShieldSlot = FindNextShield(selectedShieldSlot);
 
         RefreshQuickItem();
         RefreshShield();
@@ -109,13 +116,8 @@ public class EquipmentHUD : MonoBehaviour
     // This function cycles to the next equipped shield when V is pressed.
     private void CycleShield()
     {
-        int nextSlot = FindNextShield(selectedShieldSlot);
-
-        if (nextSlot < 0 || nextSlot == selectedShieldSlot)
-            return;
-
-        selectedShieldSlot = nextSlot;
-        RefreshShield();
+        if (equipmentManager.CycleActiveShield())
+            RefreshShield();
     }
 
     // This function finds the next quick-item slot containing an owned item,
@@ -138,25 +140,6 @@ public class EquipmentHUD : MonoBehaviour
         return -1;
     }
 
-    // This function finds the next occupied shield slot and wraps around the list.
-    private int FindNextShield(int currentSlot)
-    {
-        if (equipmentManager == null)
-            return -1;
-
-        var slots = equipmentManager.ShieldSlots;
-
-        for (int step = 1; step <= slots.Count; step++)
-        {
-            int index = (currentSlot + step) % slots.Count;
-
-            if (IsShieldSlotUsable(index))
-                return index;
-        }
-
-        return -1;
-    }
-
     // This function checks that a quick-item slot contains an item still owned.
     private bool IsQuickSlotUsable(int index)
     {
@@ -171,19 +154,6 @@ public class EquipmentHUD : MonoBehaviour
         ItemData item = equipmentManager.QuickSlots[index];
 
         return item != null && inventory.HasItem(item);
-    }
-
-    // This function checks that a shield slot contains an equipped shield.
-    private bool IsShieldSlotUsable(int index)
-    {
-        if (equipmentManager == null ||
-            index < 0 ||
-            index >= equipmentManager.ShieldSlots.Count)
-        {
-            return false;
-        }
-
-        return equipmentManager.ShieldSlots[index] != null;
     }
 
     // This function displays the selected quick item and its total inventory quantity.
@@ -210,9 +180,7 @@ public class EquipmentHUD : MonoBehaviour
     // This function displays the shield selected for gameplay.
     private void RefreshShield()
     {
-        ItemData item = IsShieldSlotUsable(selectedShieldSlot)
-            ? equipmentManager.ShieldSlots[selectedShieldSlot]
-            : null;
+        ItemData item = equipmentManager.ActiveShield;
 
         if (shieldIcon != null)
         {
@@ -225,7 +193,6 @@ public class EquipmentHUD : MonoBehaviour
     private void ClearHUD()
     {
         selectedQuickSlot = -1;
-        selectedShieldSlot = -1;
 
         if (quickItemIcon != null)
         {

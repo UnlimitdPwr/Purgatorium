@@ -23,6 +23,21 @@ public class EquipmentManager : MonoBehaviour
 
     public event Action OnEquipmentChanged;
 
+    // The shield slot currently in use during gameplay (-1 = none). Parry and
+    // block read their numbers from this shield; the HUD shows it; V cycles it.
+    private int activeShieldIndex = -1;
+    private ItemData lastActiveShield; // the shield listeners were last told about
+
+    public int ActiveShieldIndex => activeShieldIndex;
+
+    public ItemData ActiveShield =>
+        activeShieldIndex >= 0 && activeShieldIndex < shieldSlots.Count
+            ? shieldSlots[activeShieldIndex]
+            : null;
+
+    // Fired whenever ActiveShield changes (cycled, unequipped, or first equipped).
+    public event Action OnActiveShieldChanged;
+
     private void Awake()
     {
         // This function creates the initial shield, quick-item, and talisman slots.
@@ -81,7 +96,7 @@ public class EquipmentManager : MonoBehaviour
         // Assign the item to the selected slot.
         slots[slotIndex] = item;
 
-        OnEquipmentChanged?.Invoke();
+        NotifyEquipmentChanged();
         return true;
     }
 
@@ -103,7 +118,7 @@ public class EquipmentManager : MonoBehaviour
 
         slots[slotIndex] = null;
 
-        OnEquipmentChanged?.Invoke();
+        NotifyEquipmentChanged();
         return true;
     }
 
@@ -129,7 +144,7 @@ public class EquipmentManager : MonoBehaviour
             ClearItemFromSlots(talismanSlots, item);
         }
 
-        OnEquipmentChanged?.Invoke();
+        NotifyEquipmentChanged();
         return true;
     }
 
@@ -152,7 +167,7 @@ public class EquipmentManager : MonoBehaviour
         for (int i = 0; i < additionalSlots; i++)
             slots.Add(null);
 
-        OnEquipmentChanged?.Invoke();
+        NotifyEquipmentChanged();
         return true;
     }
 
@@ -252,6 +267,86 @@ public class EquipmentManager : MonoBehaviour
         return false;
     }
 
+    public void LoadState(
+        IList<ItemData> shields,
+        IList<ItemData> quickItems,
+        IList<ItemData> talismans,
+        int activeShield)
+    {
+        // This function restores saved equipment (BonfireSaveManager). It skips the
+        // bonfire-screen check on purpose; load the inventory first so owned checks pass.
+        LoadSlots(shieldSlots, shields, shieldSlotCount);
+        LoadSlots(quickSlots, quickItems, quickSlotCount);
+        LoadSlots(talismanSlots, talismans, talismanSlotCount);
+
+        activeShieldIndex = activeShield;
+        lastActiveShield = null;
+        SetActiveShield(ActiveShield != null ? activeShield : FindNextShieldSlot(-1));
+
+        OnEquipmentChanged?.Invoke();
+    }
+
+    private void LoadSlots(List<ItemData> slots, IList<ItemData> saved, int minimumCount)
+    {
+        // This function keeps any saved capacity upgrades (never fewer slots than the starting count).
+        slots.Clear();
+
+        int count = Mathf.Max(minimumCount, saved != null ? saved.Count : 0);
+
+        for (int i = 0; i < count; i++)
+            slots.Add(saved != null && i < saved.Count ? saved[i] : null);
+    }
+
+    public bool CycleActiveShield()
+    {
+        // This function switches to the next occupied shield slot, wrapping around the list.
+        int nextIndex = FindNextShieldSlot(activeShieldIndex);
+
+        if (nextIndex < 0 || nextIndex == activeShieldIndex)
+            return false;
+
+        SetActiveShield(nextIndex);
+        return true;
+    }
+
+    private int FindNextShieldSlot(int currentIndex)
+    {
+        // This function returns the next occupied shield slot after currentIndex, or -1 if all are empty.
+        for (int step = 1; step <= shieldSlots.Count; step++)
+        {
+            int index = ((currentIndex + step) % shieldSlots.Count + shieldSlots.Count) % shieldSlots.Count;
+
+            if (shieldSlots[index] != null)
+                return index;
+        }
+
+        return -1;
+    }
+
+    private void SetActiveShield(int index)
+    {
+        // This function changes the active shield and notifies listeners only if it actually changed.
+        activeShieldIndex = index;
+
+        if (ActiveShield == lastActiveShield)
+            return;
+
+        lastActiveShield = ActiveShield;
+        OnActiveShieldChanged?.Invoke();
+    }
+
+    private void NotifyEquipmentChanged()
+    {
+        // This function keeps the active shield valid (falls back to the next occupied slot
+        // if its slot was emptied) and then tells listeners the equipment changed.
+        if (ActiveShield == null)
+            SetActiveShield(FindNextShieldSlot(activeShieldIndex));
+        else if (activeShieldIndex >= 0)
+            SetActiveShield(activeShieldIndex); // same slot, possibly a different shield
+
+        OnEquipmentChanged?.Invoke();
+    }
+
     private void HandleInventoryChanged()
     {
         // This function clears equipped references when their items are no longer owned.
@@ -262,7 +357,7 @@ public class EquipmentManager : MonoBehaviour
         equipmentChanged |= ClearUnownedItems(talismanSlots);
 
         if (equipmentChanged)
-            OnEquipmentChanged?.Invoke();
+            NotifyEquipmentChanged();
     }
 
     private bool ClearUnownedItems(List<ItemData> slots)

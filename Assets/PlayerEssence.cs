@@ -29,6 +29,15 @@ public class PlayerEssence : MonoBehaviour
     }
 
 
+    // Sets Essence directly (used when loading a save).
+    public void SetEssence(int amount)
+    {
+        currentEssence = Mathf.Max(0, amount);
+
+        OnEssenceChanged?.Invoke(currentEssence);
+    }
+
+
     // =========================
     // SPEND ESSENCE
     // =========================

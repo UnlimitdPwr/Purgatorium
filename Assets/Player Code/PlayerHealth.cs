@@ -8,15 +8,18 @@ public class PlayerHealth : MonoBehaviour
     private PlayerStats playerStats;
     private BlockScript block;
     private PlayerStatusEffects status;
+    private PlayerTalismans talismans;
 
     public int CurrentHealth => currentHealth;
 
     // Used only when the Player has no PlayerStats component.
     private const int FallbackMaxHealth = 100;
 
-    // Gets the player's maximum health from PlayerStats.
+    // Gets the player's maximum health from PlayerStats, x any talisman multiplier.
     public int MaxHealth =>
-        playerStats != null ? playerStats.MaxHealth : FallbackMaxHealth;
+        Mathf.Max(1, Mathf.RoundToInt(
+            (playerStats != null ? playerStats.MaxHealth : FallbackMaxHealth) *
+            (talismans != null ? talismans.GetMultiplier(TalismanEffect.MaxHealth) : 1f)));
 
     public event Action<int, int> OnHealthChanged;
 
@@ -25,6 +28,8 @@ public class PlayerHealth : MonoBehaviour
         playerStats = GetComponent<PlayerStats>();
         block = GetComponent<BlockScript>();
         status = GetComponent<PlayerStatusEffects>();
+        talismans = PlayerTalismans.GetOrAdd(gameObject);
+        talismans.OnTalismansChanged += OnMaxHealthMayHaveChanged;
 
         if (playerStats == null)
         {
@@ -122,6 +127,20 @@ public class PlayerHealth : MonoBehaviour
             currentHealth = MaxHealth;
 
         OnHealthChanged?.Invoke(currentHealth, MaxHealth);
+    }
+
+    // Talismans changed: keep current health within the (possibly lower) max
+    // and refresh the health bar.
+    private void OnMaxHealthMayHaveChanged()
+    {
+        currentHealth = Mathf.Min(currentHealth, MaxHealth);
+        OnHealthChanged?.Invoke(currentHealth, MaxHealth);
+    }
+
+    private void OnDestroy()
+    {
+        if (talismans != null)
+            talismans.OnTalismansChanged -= OnMaxHealthMayHaveChanged;
     }
 
     // Restores the player's health to their current maximum health.

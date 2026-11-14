@@ -100,6 +100,26 @@ public class InventorySystem : MonoBehaviour
         return false;
     }
 
+    // This function replaces the whole inventory with saved contents (BonfireSaveManager).
+    // items[i]/amounts[i] fill slot i; a null item leaves that slot empty.
+    public void LoadSlots(IList<ItemData> items, IList<int> amounts)
+    {
+        InitializeInventory();
+
+        for (int i = 0; i < slots.Count; i++)
+        {
+            slots[i].Clear();
+
+            if (i < items.Count && items[i] != null && amounts[i] > 0)
+            {
+                slots[i].item = items[i];
+                slots[i].amount = amounts[i];
+            }
+        }
+
+        OnInventoryChanged?.Invoke();
+    }
+
     // This function removes items without firing an inventory event during rollback.
     private void RemoveItemWithoutNotification(ItemData item, int amount)
     {

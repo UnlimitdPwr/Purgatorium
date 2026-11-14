@@ -18,10 +18,16 @@ public class BlockScript : MonoBehaviour
     private PlayerAnimation playerAnimation;
     private PlayerStatusEffects status;
     private PlayerShield shield;
+    private PlayerTalismans talismans;
 
     // Base value -> after the active shield's multipliers and stat scaling.
-    private float DamageReduction => shield.GetBlockDamageReduction(blockDamageReduction);
-    private float StatusReduction => shield.GetBlockStatusReduction(blockStatusReduction);
+    // ...then x any talisman multiplier (capped at 100%).
+    private float DamageReduction => Mathf.Clamp01(
+        shield.GetBlockDamageReduction(blockDamageReduction) *
+        talismans.GetMultiplier(TalismanEffect.BlockDamageReduction));
+    private float StatusReduction => Mathf.Clamp01(
+        shield.GetBlockStatusReduction(blockStatusReduction) *
+        talismans.GetMultiplier(TalismanEffect.BlockStatusReduction));
 
     public bool IsBlocking => isBlocking;
     
@@ -34,6 +40,8 @@ public class BlockScript : MonoBehaviour
         shield = GetComponent<PlayerShield>();
         if (shield == null)
             shield = gameObject.AddComponent<PlayerShield>();
+
+        talismans = PlayerTalismans.GetOrAdd(gameObject);
     }
 
     // =========================

@@ -187,6 +187,11 @@ public class PlayerShield : MonoBehaviour
         if (shield == null || amount <= 0f)
             return;
 
+        amount *= PlayerTalismans.GetOrAdd(gameObject).GetMultiplier(TalismanEffect.ShieldDurabilityLoss);
+
+        if (amount <= 0f)
+            return;
+
         wear.TryGetValue(shield, out float worn);
         wear[shield] = worn + amount;
 
@@ -197,6 +202,23 @@ public class PlayerShield : MonoBehaviour
             Debug.Log("Shield broken: " + shield.itemName);
             OnShieldBroken?.Invoke(shield);
         }
+    }
+
+    // For saving: every shield that has taken wear, and how much.
+    public IReadOnlyDictionary<ShieldData, float> WearByShield => wear;
+
+    // For loading: replaces all wear with saved values.
+    public void LoadWear(IDictionary<ShieldData, float> saved)
+    {
+        wear.Clear();
+
+        foreach (KeyValuePair<ShieldData, float> pair in saved)
+        {
+            if (pair.Key != null && pair.Value > 0f)
+                wear[pair.Key] = pair.Value;
+        }
+
+        OnDurabilityChanged?.Invoke(Equipped);
     }
 
     // Hook for the future repair feature: restores a shield to full durability.

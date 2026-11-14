@@ -1,9 +1,14 @@
+using System;
 using UnityEngine;
 
 public class Bonfire : MonoBehaviour, IInteractable
 {
     [Header("Bonfire")]
     [SerializeField] private Transform respawnPoint;
+
+    // Fired after the player rests at any bonfire (bonfire, player).
+    // BonfireSaveManager saves the game on this.
+    public static event Action<Bonfire, GameObject> OnRested;
 
 
     // This function is called by the InteractionScript when the player interacts with the active bonfire.
@@ -77,6 +82,8 @@ public class Bonfire : MonoBehaviour, IInteractable
         }
 
         Debug.Log("Player is resting.");
+
+        OnRested?.Invoke(this, interactor);
     }
 
     // This function gives the checkpoint system the location where the player should respawn after dying.

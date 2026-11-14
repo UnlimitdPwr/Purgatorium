@@ -267,6 +267,36 @@ public class EquipmentManager : MonoBehaviour
         return false;
     }
 
+    public void LoadState(
+        IList<ItemData> shields,
+        IList<ItemData> quickItems,
+        IList<ItemData> talismans,
+        int activeShield)
+    {
+        // This function restores saved equipment (BonfireSaveManager). It skips the
+        // bonfire-screen check on purpose; load the inventory first so owned checks pass.
+        LoadSlots(shieldSlots, shields, shieldSlotCount);
+        LoadSlots(quickSlots, quickItems, quickSlotCount);
+        LoadSlots(talismanSlots, talismans, talismanSlotCount);
+
+        activeShieldIndex = activeShield;
+        lastActiveShield = null;
+        SetActiveShield(ActiveShield != null ? activeShield : FindNextShieldSlot(-1));
+
+        OnEquipmentChanged?.Invoke();
+    }
+
+    private void LoadSlots(List<ItemData> slots, IList<ItemData> saved, int minimumCount)
+    {
+        // This function keeps any saved capacity upgrades (never fewer slots than the starting count).
+        slots.Clear();
+
+        int count = Mathf.Max(minimumCount, saved != null ? saved.Count : 0);
+
+        for (int i = 0; i < count; i++)
+            slots.Add(saved != null && i < saved.Count ? saved[i] : null);
+    }
+
     public bool CycleActiveShield()
     {
         // This function switches to the next occupied shield slot, wrapping around the list.

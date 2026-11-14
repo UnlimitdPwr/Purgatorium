@@ -22,6 +22,16 @@ public enum ScalingRank
     S
 }
 
+// The player's levelled stats (PlayerStats). Append new entries at the END only.
+public enum PlayerStatType
+{
+    Health,
+    Stamina,
+    Strength,
+    Dexterity,
+    SoulDurability
+}
+
 [Serializable]
 public class ScalingPoint
 {

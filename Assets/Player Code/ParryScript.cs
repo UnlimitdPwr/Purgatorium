@@ -42,6 +42,7 @@ public class ParryScript : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private PlayerStatusEffects status;
     private PlayerShield shield;
+    private PlayerTalismans talismans;
 
     private bool windowOpen;
     private float nextParryTime;
@@ -52,8 +53,10 @@ public class ParryScript : MonoBehaviour
 
     // Base value -> after the active shield's multipliers and stat scaling.
     private float StartDelay => shield.GetParryStartDelay(startDelay);
-    private float WindowDuration => shield.GetParryWindow(windowDuration);
-    private float Cooldown => shield.GetParryCooldown(cooldown);
+    private float WindowDuration =>
+        shield.GetParryWindow(windowDuration) * talismans.GetMultiplier(TalismanEffect.ParryWindow);
+    private float Cooldown =>
+        shield.GetParryCooldown(cooldown) * talismans.GetMultiplier(TalismanEffect.ParryCooldown);
     private bool RequireFacing => shield.GetParryRequiresFacing(requireFacing);
 
     // Fired once when an incoming attack is successfully parried. The argument is
@@ -74,6 +77,8 @@ public class ParryScript : MonoBehaviour
         shield = GetComponent<PlayerShield>();
         if (shield == null)
             shield = gameObject.AddComponent<PlayerShield>();
+
+        talismans = PlayerTalismans.GetOrAdd(gameObject);
     }
 
     void OnDisable()

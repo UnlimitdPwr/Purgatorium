@@ -64,6 +64,21 @@ public class PlayerStats : MonoBehaviour
     public float MaxStaminaAtLevelOne => baseStamina;
 
 
+    // Returns the level of any stat (used by stat scaling on equipment).
+    public int GetLevel(PlayerStatType stat)
+    {
+        switch (stat)
+        {
+            case PlayerStatType.Health: return healthLevel;
+            case PlayerStatType.Stamina: return staminaLevel;
+            case PlayerStatType.Strength: return strengthLevel;
+            case PlayerStatType.Dexterity: return dexterityLevel;
+            case PlayerStatType.SoulDurability: return soulDurabilityLevel;
+            default: return 1;
+        }
+    }
+
+
     public int GetUpgradeCost(int currentLevel)
     {
         // This function calculates the Essence cost required to upgrade from the supplied level to the next level.

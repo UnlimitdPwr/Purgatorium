@@ -28,6 +28,16 @@ public class PlayerStatusEffects : StatusEffectsBase
         death = GetComponent<PlayerDeath>();
     }
 
+    // Equipped talismans: overall buildup, per-status resistances, recovery.
+    private PlayerTalismans talismans;
+    private PlayerTalismans Talismans => talismans != null ? talismans : (talismans = PlayerTalismans.GetOrAdd(gameObject));
+
+    protected override float GearBuildupMultiplier(StatusType type) =>
+        Talismans.GetMultiplier(TalismanEffect.StatusBuildupTaken) * Talismans.GetResistance(type);
+
+    protected override float GearRecoveryMultiplier =>
+        Talismans.GetMultiplier(TalismanEffect.StatusRecovery);
+
     protected override bool CanBeAffected()
     {
         return death == null || !death.IsDead;

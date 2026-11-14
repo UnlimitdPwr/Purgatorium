@@ -2,9 +2,10 @@ using UnityEngine;
 
 public class BlockScript : MonoBehaviour
 {
-    // Both values below are the NO-SHIELD fallback. While a ShieldData is the
-    // active shield (EquipmentManager.ActiveShield), its block values are used instead.
-    [Header("Blocking (no shield equipped)")]
+    // These are the player's BASE block values. The active shield (PlayerShield)
+    // multiplies them and adds Strength scaling; with no shield (or a broken one)
+    // they're used as-is.
+    [Header("Blocking (player base)")]
     [SerializeField, Range(0f, 1f)]
     private float blockDamageReduction = 0.6f;
 
@@ -16,11 +17,11 @@ public class BlockScript : MonoBehaviour
     private bool isBlocking;
     private PlayerAnimation playerAnimation;
     private PlayerStatusEffects status;
-    private EquipmentManager equipment;
+    private PlayerShield shield;
 
-    private ShieldData ActiveShield => equipment != null ? equipment.ActiveShield as ShieldData : null;
-    private float DamageReduction => ActiveShield != null ? ActiveShield.blockDamageReduction : blockDamageReduction;
-    private float StatusReduction => ActiveShield != null ? ActiveShield.blockStatusReduction : blockStatusReduction;
+    // Base value -> after the active shield's multipliers and stat scaling.
+    private float DamageReduction => shield.GetBlockDamageReduction(blockDamageReduction);
+    private float StatusReduction => shield.GetBlockStatusReduction(blockStatusReduction);
 
     public bool IsBlocking => isBlocking;
     
@@ -29,7 +30,10 @@ public class BlockScript : MonoBehaviour
     {
         playerAnimation = GetComponent<PlayerAnimation>();
         status = GetComponent<PlayerStatusEffects>();
-        equipment = GetComponent<EquipmentManager>();
+
+        shield = GetComponent<PlayerShield>();
+        if (shield == null)
+            shield = gameObject.AddComponent<PlayerShield>();
     }
 
     // =========================
@@ -62,6 +66,9 @@ public class BlockScript : MonoBehaviour
             return false;
 
         Debug.Log("Attack blocked!");
+
+        // Blocking wears the shield's Soul Durability.
+        shield.WearFromBlock();
 
         if (playerAnimation != null)
             playerAnimation.PlayBlockHitAnimation();

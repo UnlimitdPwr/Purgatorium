@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class MovementScript : MonoBehaviour
 {
+    private BlockScript block;
+
     public float moveSpeed = 5f;
     public float jumpForce = 10f;
 
@@ -49,6 +51,7 @@ public class MovementScript : MonoBehaviour
         ladderClimb = GetComponent<LadderClimbScript>();
         hazards = GetComponent<HazardReceiver>();
         status = GetComponent<PlayerStatusEffects>();
+        block = GetComponent<BlockScript>();
     }
 
     public void SetMoveInput(float input)
@@ -113,6 +116,13 @@ public class MovementScript : MonoBehaviour
         if (ladderClimb != null && ladderClimb.IsClimbing)
         {
             jumpRising = false;
+            return;
+        }
+
+        // Prevents horizontal movement while the player is blocking.
+        if (block != null && block.IsBlocking)
+        {
+            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
             return;
         }
 

@@ -7556,6 +7556,7 @@ GameObject:
   - component: {fileID: 952280039}
   - component: {fileID: 952280054}
   - component: {fileID: 952280055}
+  - component: {fileID: 952280056}
   m_Layer: 7
   m_Name: Enemy
   m_TagString: Untagged
@@ -7695,6 +7696,7 @@ MonoBehaviour:
   statusMultiplier: 1
   statusOnHit: []
   attackCooldown: 1
+  attacks: []
   minComboSwings: 1
   maxComboSwings: 3
   comboSwingDelay: 0.15
@@ -7711,6 +7713,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86a572ac88ec6df45b6c6426b58747fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  showNoticedMark: 1
+  noticedMarkColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  noticedMarkSize: 6
   flashDuringWindUp: 1
   windUpTint: {r: 1, g: 0.45, b: 0.45, a: 1}
   windUpFlashRate: 8
@@ -7734,6 +7739,7 @@ MonoBehaviour:
     m_Bits: 256
   edgeLookAhead: 0.15
   ledgeCheckDepth: 1
+  allySpacing: 1
   avoidHazards: 1
 --- !u!114 &952280049
 MonoBehaviour:
@@ -7750,7 +7756,8 @@ MonoBehaviour:
   reachMargin: 0.25
   fallbackAttackRange: 1.1
   leashDistance: 10
-  levelDifference: 0.5
+  noticePause: 0.5
+  parriedDuration: 0.8
   logStateChanges: 0
 --- !u!70 &952280050
 CapsuleCollider2D:
@@ -7928,6 +7935,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 70b3910a084284208a877ecc81910603, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HazardReceiver
+--- !u!114 &952280056
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 952280038}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e17a18ecb179348ad94c7152be000e1c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyNavigator
+  levelDifference: 0.5
 --- !u!1 &960305509
 GameObject:
   m_ObjectHideFlags: 0
@@ -15470,6 +15490,7 @@ GameObject:
   - component: {fileID: 2003877436}
   - component: {fileID: 2003877437}
   - component: {fileID: 2003877438}
+  - component: {fileID: 2003877439}
   m_Layer: 9
   m_Name: Player
   m_TagString: Player
@@ -15938,6 +15959,18 @@ MonoBehaviour:
   shieldSlotCount: 2
   quickSlotCount: 5
   talismanSlotCount: 2
+--- !u!114 &2003877439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2003877414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17a06c2974953f244b29606619e939d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
 --- !u!1 &2030937312
 GameObject:
   m_ObjectHideFlags: 0

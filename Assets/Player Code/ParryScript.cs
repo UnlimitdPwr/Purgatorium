@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections;
 using UnityEngine;
@@ -20,14 +21,15 @@ public class ParryScript : MonoBehaviour
     [Tooltip("How long the parry window stays open, in seconds.")]
     [SerializeField] private float windowDuration = 0.55f;
 
-    [Tooltip("Seconds from one TryParry() to the next. Keep this above the " +
-             "clip length so parry can't be spammed.")]
+    [Tooltip("Seconds from one TryParry() to the next.")]
     [SerializeField] private float cooldown = 0.80f;
 
+    [Header("Parry Action")]
+    [Tooltip("How long the player remains locked in the parry action. Match this to the parry animation length.")]
+    [SerializeField] private float parryActionDuration = 0.42f;
+
     [Header("Driving Mode")]
-    [Tooltip("ON  = the window is opened/closed only by animation events calling " +
-             "OpenParryWindow() / CloseParryWindow() on the parry clip.\n" +
-             "OFF = the window is driven by the startDelay / windowDuration timer.")]
+    [Tooltip("ON = animation events control the parry window. OFF = the timer controls it.")]
     [SerializeField] private bool useAnimationEvents = false;
 
     [Header("Rules")]
@@ -35,7 +37,7 @@ public class ParryScript : MonoBehaviour
     [SerializeField] private bool requireFacing = true;
 
     // =========================
-    // STATE
+    // REFERENCES
     // =========================
 
     private PlayerAnimation playerAnimation;
@@ -44,13 +46,29 @@ public class ParryScript : MonoBehaviour
     private PlayerShield shield;
     private PlayerTalismans talismans;
 
+    // =========================
+    // STATE
+    // =========================
+
     private bool windowOpen;
     private float nextParryTime;
+
     private Coroutine windowRoutine;
+    private Coroutine parryRoutine;
 
     public bool IsParryWindowOpen => windowOpen;
     public bool IsOnCooldown => Time.time < nextParryTime;
 
+    // Indicates whether the complete parry action is currently playing.
+    public bool IsParrying { get; private set; }
+
+    // Fired when the player begins the parry action.
+    public event Action OnParryStarted;
+
+    // Fired when the player finishes the parry action.
+    public event Action OnParryEnded;
+
+    // Fired once when an incoming attack is successfully parried.
     // Base value -> after the active shield's multipliers and stat scaling.
     private float StartDelay => shield.GetParryStartDelay(startDelay);
     private float WindowDuration =>
@@ -68,7 +86,8 @@ public class ParryScript : MonoBehaviour
     // SETUP
     // =========================
 
-    void Awake()
+    // Gets the components required by the parry system.
+    private void Awake()
     {
         playerAnimation = GetComponent<PlayerAnimation>();
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -79,29 +98,48 @@ public class ParryScript : MonoBehaviour
         talismans = PlayerTalismans.GetOrAdd(gameObject);
     }
 
-    void OnDisable()
+    // Resets the parry state if the player is disabled during a parry.
+    private void OnDisable()
     {
-        // Don't leave the window stuck open if the player is disabled mid-parry.
         windowOpen = false;
         windowRoutine = null;
+        parryRoutine = null;
+
+        if (IsParrying)
+        {
+            IsParrying = false;
+            OnParryEnded?.Invoke();
+        }
     }
 
     // =========================
     // INPUT ENTRY POINT
     // =========================
 
-    // Called by PlayerController1 when the parry button is pressed.
+    // Starts the parry action, plays its animation and starts the parry window.
     public void TryParry()
     {
-        if (IsOnCooldown)
+        if (IsOnCooldown || IsParrying)
             return;
 
         nextParryTime = Time.time + Cooldown;
 
+        // Mark the complete parry action as active.
+        IsParrying = true;
+
+        // Notify the state machine that parrying has started.
+        OnParryStarted?.Invoke();
+
         if (playerAnimation != null)
             playerAnimation.PlayParryAnimation();
 
-        // In animation-event mode the clip's events own the window.
+        // Start the complete parry action timer.
+        if (parryRoutine != null)
+            StopCoroutine(parryRoutine);
+
+        parryRoutine = StartCoroutine(ParryActionRoutine());
+
+        // In animation-event mode, animation events control the parry window.
         if (useAnimationEvents)
             return;
 
@@ -111,6 +149,19 @@ public class ParryScript : MonoBehaviour
         windowRoutine = StartCoroutine(TimedParryWindow());
     }
 
+    // Keeps the player in the parrying state for the configured animation duration.
+    private IEnumerator ParryActionRoutine()
+    {
+        yield return new WaitForSeconds(parryActionDuration);
+
+        IsParrying = false;
+        parryRoutine = null;
+
+        // Notify the state machine that parrying has ended.
+        OnParryEnded?.Invoke();
+    }
+
+    // Controls when the player can successfully parry an incoming attack.
     private IEnumerator TimedParryWindow()
     {
         windowOpen = false;
@@ -122,8 +173,9 @@ public class ParryScript : MonoBehaviour
 
         windowOpen = true;
 
-        // A status condition can shorten the window.
-        float windowMultiplier = status != null ? status.ParryWindowMultiplier : 1f;
+        float windowMultiplier = status != null
+            ? status.ParryWindowMultiplier
+            : 1f;
 
         yield return new WaitForSeconds(WindowDuration * windowMultiplier);
 
@@ -135,12 +187,13 @@ public class ParryScript : MonoBehaviour
     // ANIMATION EVENT HOOKS
     // =========================
 
-    // Wire these to animation events on the parry clip when useAnimationEvents is ON.
+    // Opens the parry window when called by an animation event.
     public void OpenParryWindow()
     {
         windowOpen = true;
     }
 
+    // Closes the parry window when called by an animation event.
     public void CloseParryWindow()
     {
         windowOpen = false;
@@ -150,8 +203,7 @@ public class ParryScript : MonoBehaviour
     // PARRY RESOLUTION
     // =========================
 
-    // Called by EnemyHitbox before it runs any damage logic. Returns true when
-    // the attack is parried, in which case the caller must cancel its damage.
+    // Checks whether an incoming attack can be parried and notifies listeners on success.
     public bool TryParryAttack(Vector2 attackSourcePosition, GameObject attacker)
     {
         if (!windowOpen)
@@ -169,17 +221,19 @@ public class ParryScript : MonoBehaviour
         return true;
     }
 
+    // Checks whether the attacker is in front of the player.
     private bool IsFacingSource(Vector2 attackSourcePosition)
     {
         float toSource = attackSourcePosition.x - transform.position.x;
 
-        // Attacker is basically on top of the player — allow the parry.
         if (Mathf.Abs(toSource) < 0.01f)
             return true;
 
-        // PlayerAnimation sets flipX = true when the player faces left.
-        float facingDir = (spriteRenderer != null && spriteRenderer.flipX) ? -1f : 1f;
+        float facingDir = (spriteRenderer != null && spriteRenderer.flipX)
+            ? -1f
+            : 1f;
 
         return Mathf.Sign(toSource) == facingDir;
     }
 }
+

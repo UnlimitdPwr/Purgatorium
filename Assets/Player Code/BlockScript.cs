@@ -1,3 +1,5 @@
+
+using System;
 using UnityEngine;
 
 public class BlockScript : MonoBehaviour
@@ -6,8 +8,7 @@ public class BlockScript : MonoBehaviour
     [SerializeField, Range(0f, 1f)]
     private float blockDamageReduction = 0.6f;
 
-    [Tooltip("Share of an attack's status buildup that blocking stops. " +
-             "0 = blocking doesn't help, 1 = blocked hits add no buildup. (Parries always stop all of it.)")]
+    [Tooltip("Share of an attack's status buildup that blocking stops.")]
     [SerializeField, Range(0f, 1f)]
     private float blockStatusReduction = 0.5f;
 
@@ -16,7 +17,10 @@ public class BlockScript : MonoBehaviour
     private PlayerStatusEffects status;
 
     public bool IsBlocking => isBlocking;
-    
+
+    // These events notify other scripts when blocking starts and ends.
+    public event Action OnBlockStarted;
+    public event Action OnBlockEnded;
 
     private void Awake()
     {
@@ -28,26 +32,33 @@ public class BlockScript : MonoBehaviour
     // BLOCKING
     // =========================
 
+    // Starts blocking and notifies the state machine.
     public void StartBlocking()
     {
         if (isBlocking)
             return;
 
         isBlocking = true;
+
+        OnBlockStarted?.Invoke();
     }
 
+    // Stops blocking and notifies the state machine.
     public void StopBlocking()
     {
         if (!isBlocking)
             return;
 
         isBlocking = false;
+
+        OnBlockEnded?.Invoke();
     }
 
     // =========================
     // BLOCK HIT
     // =========================
 
+    // Checks whether an incoming attack can be blocked.
     public bool TryBlockHit()
     {
         if (!isBlocking)
@@ -65,9 +76,10 @@ public class BlockScript : MonoBehaviour
     // DAMAGE REDUCTION
     // =========================
 
-    // A status condition can weaken blocks (1 = full strength).
+    // Calculates how effective blocking is under current status effects.
     float Effectiveness => status != null ? status.BlockEffectiveness : 1f;
 
+    // Calculates the damage remaining after blocking.
     public int GetBlockedDamage(int incomingDamage)
     {
         if (incomingDamage <= 0)
@@ -75,8 +87,6 @@ public class BlockScript : MonoBehaviour
 
         float damageMultiplier = 1f - blockDamageReduction * Effectiveness;
 
-        // Round down, but with a tiny tolerance: float maths makes 1 - 0.6
-        // come out as 0.39999998, which would floor 10 * 0.4 to 3 instead of 4.
         int blockedDamage = Mathf.FloorToInt(
             incomingDamage * damageMultiplier + 0.0001f
         );
@@ -84,6 +94,7 @@ public class BlockScript : MonoBehaviour
         return Mathf.Max(0, blockedDamage);
     }
 
+    // Calculates how much status buildup remains after blocking.
     public float GetBlockedStatusBuildup(float incomingBuildup)
     {
         if (incomingBuildup <= 0f)
@@ -92,3 +103,4 @@ public class BlockScript : MonoBehaviour
         return incomingBuildup * (1f - blockStatusReduction * Effectiveness);
     }
 }
+

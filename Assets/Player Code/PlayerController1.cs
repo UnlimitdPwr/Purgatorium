@@ -12,6 +12,7 @@ public class PlayerController1 : MonoBehaviour
     private WallJumpScript wallJump;
     private LadderClimbScript ladderClimb;
     private PlayerStatusEffects status;
+    private PlayerStateMachine stateMachine;
 
     private bool isResting;
 
@@ -29,6 +30,7 @@ public class PlayerController1 : MonoBehaviour
         wallJump = GetComponent<WallJumpScript>();
         ladderClimb = GetComponent<LadderClimbScript>();
         status = GetComponent<PlayerStatusEffects>();
+        stateMachine = GetComponent<PlayerStateMachine>();
     }
 
     void Update()
@@ -87,8 +89,15 @@ public class PlayerController1 : MonoBehaviour
     // MOVEMENT
     // =========================
 
+    // Sends movement input only when the current state allows movement.
     void HandleMovement()
     {
+        if (stateMachine != null && !stateMachine.CanMove())
+        {
+            movement.SetMoveInput(0f);
+            return;
+        }
+
         movement.SetMoveInput(playerInput.MoveInput);
     }
 
@@ -115,6 +124,9 @@ public class PlayerController1 : MonoBehaviour
 
     void HandleJump()
     {
+        if (stateMachine != null && !stateMachine.CanJump())
+            return;
+
         if (playerInput.JumpPressed)
             movement.Jump();
 
@@ -148,6 +160,9 @@ public class PlayerController1 : MonoBehaviour
         if (status != null && status.ParryDisabled)
             return;
 
+        if (stateMachine != null && !stateMachine.CanParry())
+            return;
+
         if (playerInput.ParryPressed)
             parry.TryParry();
     }
@@ -156,23 +171,34 @@ public class PlayerController1 : MonoBehaviour
     // DASH
     // =========================
 
+
+    // Handles dash input while respecting state restrictions and status effects.
     void HandleDash()
     {
         if (dash == null)
             return;
 
-        // Status conditions can switch off sprinting and/or dashing.
+        // Status conditions can disable sprinting and/or dashing.
         bool sprintDisabled = status != null && status.SprintDisabled;
         bool dashDisabled = status != null && status.DashDisabled;
 
-        dash.SetDashHeld(playerInput.DashHeld && !sprintDisabled);
+        // Check whether the current player state allows dashing.
+        bool canDash = stateMachine == null || stateMachine.CanDash();
 
-        if (playerInput.DashPressed && !dashDisabled)
+        // Update sprint input continuously.
+        dash.SetDashHeld(playerInput.DashHeld && !sprintDisabled && canDash);
+
+        // Only attempt a dash when the input is pressed and all conditions allow it.
+        if (playerInput.DashPressed && !dashDisabled && canDash)
+        {
             dash.TryDash();
+        }
     }
+
 
     //BLOCKING
 
+    // Handles blocking input and changes state only when blocking actually starts.
     void HandleBlock()
     {
         if (block == null)
@@ -180,10 +206,16 @@ public class PlayerController1 : MonoBehaviour
 
         bool blockDisabled = status != null && status.BlockDisabled;
 
-        if (playerInput.BlockHeld && !blockDisabled)
+        bool canBlock = stateMachine == null || stateMachine.CanBlock();
+
+        if (playerInput.BlockHeld && !blockDisabled && canBlock)
+        {
             block.StartBlocking();
+        }
         else
+        {
             block.StopBlocking();
+        }
     }
 
     // =========================

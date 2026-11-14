@@ -8,7 +8,11 @@ public class ParryScript : MonoBehaviour
     // CONFIG
     // =========================
 
-    [Header("Parry Window")]
+    // Every value in this block is the NO-SHIELD fallback. While a ShieldData is
+    // the active shield (EquipmentManager.ActiveShield), its own parry values are
+    // used instead, and a successful parry also applies its statusOnParry.
+
+    [Header("Parry Window (no shield equipped)")]
     [Tooltip("Seconds after TryParry() before the parry window opens. " +
              "Tuned for the ~0.42s HeroKnight_Block clip.")]
     [SerializeField] private float startDelay = 0.05f;
@@ -37,6 +41,7 @@ public class ParryScript : MonoBehaviour
     private PlayerAnimation playerAnimation;
     private SpriteRenderer spriteRenderer;
     private PlayerStatusEffects status;
+    private EquipmentManager equipment;
 
     private bool windowOpen;
     private float nextParryTime;
@@ -44,6 +49,14 @@ public class ParryScript : MonoBehaviour
 
     public bool IsParryWindowOpen => windowOpen;
     public bool IsOnCooldown => Time.time < nextParryTime;
+
+    // The active shield's blueprint, or null when none (or a plain ItemData) is equipped.
+    public ShieldData ActiveShield => equipment != null ? equipment.ActiveShield as ShieldData : null;
+
+    private float StartDelay => ActiveShield != null ? ActiveShield.parryStartDelay : startDelay;
+    private float WindowDuration => ActiveShield != null ? ActiveShield.parryWindowDuration : windowDuration;
+    private float Cooldown => ActiveShield != null ? ActiveShield.parryCooldown : cooldown;
+    private bool RequireFacing => ActiveShield != null ? ActiveShield.parryRequiresFacing : requireFacing;
 
     // Fired once when an incoming attack is successfully parried. The argument is
     // the attacker's root GameObject (may be null). Hook VFX / audio here without
@@ -59,6 +72,7 @@ public class ParryScript : MonoBehaviour
         playerAnimation = GetComponent<PlayerAnimation>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         status = GetComponent<PlayerStatusEffects>();
+        equipment = GetComponent<EquipmentManager>();
     }
 
     void OnDisable()
@@ -78,7 +92,7 @@ public class ParryScript : MonoBehaviour
         if (IsOnCooldown)
             return;
 
-        nextParryTime = Time.time + cooldown;
+        nextParryTime = Time.time + Cooldown;
 
         if (playerAnimation != null)
             playerAnimation.PlayParryAnimation();
@@ -97,15 +111,17 @@ public class ParryScript : MonoBehaviour
     {
         windowOpen = false;
 
-        if (startDelay > 0f)
-            yield return new WaitForSeconds(startDelay);
+        float delay = StartDelay;
+
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
 
         windowOpen = true;
 
         // A status condition can shorten the window.
         float windowMultiplier = status != null ? status.ParryWindowMultiplier : 1f;
 
-        yield return new WaitForSeconds(windowDuration * windowMultiplier);
+        yield return new WaitForSeconds(WindowDuration * windowMultiplier);
 
         windowOpen = false;
         windowRoutine = null;
@@ -137,12 +153,35 @@ public class ParryScript : MonoBehaviour
         if (!windowOpen)
             return false;
 
-        if (requireFacing && !IsFacingSource(attackSourcePosition))
+        if (RequireFacing && !IsFacingSource(attackSourcePosition))
             return false;
+
+        ApplyStatusOnParry(attacker);
 
         OnParrySuccess?.Invoke(attacker);
 
         return true;
+    }
+
+    // The active shield's "parrying puts X of status Z on the attacker". The
+    // attacker's own resistances (and locked meters) apply as for any buildup.
+    private void ApplyStatusOnParry(GameObject attacker)
+    {
+        ShieldData shield = ActiveShield;
+
+        if (shield == null || shield.statusOnParry == null || attacker == null)
+            return;
+
+        IStatusReceiver receiver = attacker.GetComponentInParent<IStatusReceiver>();
+
+        if (receiver == null)
+            return;
+
+        foreach (StatusInfliction infliction in shield.statusOnParry)
+        {
+            if (infliction != null && infliction.buildup > 0f)
+                receiver.AddBuildup(infliction.status, infliction.buildup);
+        }
     }
 
     private bool IsFacingSource(Vector2 attackSourcePosition)

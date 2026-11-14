@@ -2,7 +2,9 @@ using UnityEngine;
 
 public class BlockScript : MonoBehaviour
 {
-    [Header("Blocking")]
+    // Both values below are the NO-SHIELD fallback. While a ShieldData is the
+    // active shield (EquipmentManager.ActiveShield), its block values are used instead.
+    [Header("Blocking (no shield equipped)")]
     [SerializeField, Range(0f, 1f)]
     private float blockDamageReduction = 0.6f;
 
@@ -14,6 +16,11 @@ public class BlockScript : MonoBehaviour
     private bool isBlocking;
     private PlayerAnimation playerAnimation;
     private PlayerStatusEffects status;
+    private EquipmentManager equipment;
+
+    private ShieldData ActiveShield => equipment != null ? equipment.ActiveShield as ShieldData : null;
+    private float DamageReduction => ActiveShield != null ? ActiveShield.blockDamageReduction : blockDamageReduction;
+    private float StatusReduction => ActiveShield != null ? ActiveShield.blockStatusReduction : blockStatusReduction;
 
     public bool IsBlocking => isBlocking;
     
@@ -22,6 +29,7 @@ public class BlockScript : MonoBehaviour
     {
         playerAnimation = GetComponent<PlayerAnimation>();
         status = GetComponent<PlayerStatusEffects>();
+        equipment = GetComponent<EquipmentManager>();
     }
 
     // =========================
@@ -73,7 +81,7 @@ public class BlockScript : MonoBehaviour
         if (incomingDamage <= 0)
             return 0;
 
-        float damageMultiplier = 1f - blockDamageReduction * Effectiveness;
+        float damageMultiplier = 1f - DamageReduction * Effectiveness;
 
         // Round down, but with a tiny tolerance: float maths makes 1 - 0.6
         // come out as 0.39999998, which would floor 10 * 0.4 to 3 instead of 4.
@@ -89,6 +97,6 @@ public class BlockScript : MonoBehaviour
         if (incomingBuildup <= 0f)
             return 0f;
 
-        return incomingBuildup * (1f - blockStatusReduction * Effectiveness);
+        return incomingBuildup * (1f - StatusReduction * Effectiveness);
     }
 }

@@ -40,6 +40,16 @@ public class WorldItem : MonoBehaviour
         }
     }
 
+    // This function sets the item and amount on a pickup spawned at runtime
+    // (e.g. an enemy drop) and refreshes its world sprite.
+    public void Initialize(ItemData item, int itemAmount)
+    {
+        itemData = item;
+        amount = Mathf.Max(1, itemAmount);
+
+        SetupWorldVisual();
+    }
+
     // This function assigns the world-specific sprite from the ItemData.
     private void SetupWorldVisual()
     {

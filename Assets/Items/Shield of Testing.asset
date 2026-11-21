@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82a1066b848aa4cbba4692c2de4826c5, type: 3}
+  m_Name: Shield of Testing
+  m_EditorClassIdentifier: Assembly-CSharp::ShieldData
+  itemName: Shield of Testing
+  description: 'A legendary shield once used to test legendary mechanics
+
+'
+  worldSprite: {fileID: 21300002, guid: 7810966f0f690954c87305933cabf2b0, type: 3}
+  inventoryIcon: {fileID: 0}
+  maxStack: 99
+  equipmentType: 0
+  strengthScaling: 6
+  dexterityScaling: 6
+  soulDurabilityScaling: 6
+  parryWindowMultiplier: 1
+  parryStartDelayMultiplier: 1
+  parryCooldownMultiplier: 1
+  canParryFromBehind: 0
+  blockDamageMultiplier: 1
+  blockStatusMultiplier: 1
+  statusOnParry:
+  - status: 2
+    buildup: 20
+  baseDurability: 100
+  durabilityLossPerBlock: 5
+  durabilityLossPerParry: 2
+  statusMultiplierWhenWorn: 0.25
